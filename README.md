@@ -16,6 +16,7 @@ Supabase-Projekt (Postgres).
 
 - [Was die App kann](#was-die-app-kann)
 - [Bedienung](#bedienung)
+- [Passwort vergessen](#passwort-vergessen)
 - [Technische Entscheidungen](#technische-entscheidungen)
 - [Projektstruktur](#projektstruktur)
 - [Einrichtung: Supabase](#einrichtung-supabase)
@@ -76,6 +77,30 @@ Die Farben im Kalender bedeuten:
 | Blauer Rahmen | Heute |
 | Zahl unten rechts | Anzahl Personen mit Zeit |
 | 📝 | Für diesen Tag gibt es Notizen |
+
+---
+
+## Passwort vergessen
+
+Weil die App bewusst keine E-Mail-Adressen speichert, gibt es **kein
+automatisches „Passwort vergessen"** – es gäbe keinen Weg, den
+Zurücksetzen-Link zuzustellen. Die App weist beim Anlegen und beim
+Anmelden darauf hin.
+
+Als Betreiber/in des Supabase-Projekts kannst du ein Passwort im Dashboard
+neu setzen:
+
+1. **Authentication → Users** öffnen.
+2. Die betroffene Person suchen. Sie steht dort unter ihrer technischen
+   Kennung, also z. B. `kruemelmonster-1a2b3c@example.com` – der Anfang
+   entspricht dem Namen in Kleinbuchstaben mit ausgeschriebenen Umlauten.
+3. Über das Menü am Zeilenende **Reset password** bzw. das Bearbeiten des
+   Benutzers ein neues Passwort vergeben und der Person durchgeben.
+
+Alternativ legt die Person einfach einen neuen Account mit leicht
+verändertem Namen an. Ihre bisherigen Einträge bleiben dann allerdings
+unter dem alten Namen stehen; löschen lassen sie sich im **Table Editor**
+unter `day_entries`.
 
 ---
 

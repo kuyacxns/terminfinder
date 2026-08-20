@@ -177,8 +177,12 @@ function setAuthMode(mode) {
   ui.authPassword.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
   ui.authHint.textContent =
     mode === 'register'
-      ? 'Nimm ruhig einen Künstlernamen – eine E-Mail-Adresse brauchst du nicht. Dein Profilbild bekommst du automatisch.'
-      : 'Melde dich mit dem Namen an, mit dem du deinen Account angelegt hast.';
+      ? 'Nimm ruhig einen Künstlernamen – eine E-Mail-Adresse brauchst du nicht. ' +
+        'Dein Profilbild bekommst du automatisch. Merk dir dein Passwort aber gut: ' +
+        'Weil wir keine E-Mail-Adresse speichern, gibt es kein "Passwort vergessen".'
+      : 'Melde dich mit dem Namen an, mit dem du deinen Account angelegt hast. ' +
+        'Passwort vergessen? Da wir keine E-Mail-Adresse speichern, kann es nur die ' +
+        'Person zurücksetzen, die den Kalender eingerichtet hat.';
   setStatus(ui.authStatus, '');
 }
 
