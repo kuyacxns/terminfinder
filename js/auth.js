@@ -137,6 +137,18 @@ function isUniqueViolation(error) {
  */
 function translateAuthError(error, context) {
   const message = String(error?.message ?? '').toLowerCase();
+  const code = String(error?.code ?? '').toLowerCase();
+
+  // Fehlkonfiguration des Supabase-Projekts – betrifft Registrierung und
+  // Anmeldung gleichermaßen und ist nur im Dashboard zu beheben. Deshalb
+  // hier eine Meldung, die genau sagt, welcher Schalter gemeint ist.
+  if (code === 'email_provider_disabled' || message.includes('email signups are disabled')) {
+    return (
+      'Anmeldungen sind im Supabase-Projekt abgeschaltet. Unter ' +
+      'Authentication → Sign In / Providers muss der Anbieter "Email" ' +
+      'eingeschaltet sein (und darin "Confirm email" aus).'
+    );
+  }
 
   if (context === 'register') {
     if (message.includes('already registered') || message.includes('already been registered')) {
@@ -148,10 +160,17 @@ function translateAuthError(error, context) {
     if (message.includes('email') && message.includes('invalid')) {
       return 'Mit diesem Namen kommt die Anmeldung nicht zurecht. Bitte wähle einen anderen.';
     }
-    if (message.includes('signups not allowed') || message.includes('signup is disabled')) {
+    if (
+      code === 'signup_disabled' ||
+      message.includes('signups not allowed') ||
+      message.includes('signup is disabled')
+    ) {
       return 'Neue Accounts sind in den Supabase-Einstellungen gerade deaktiviert.';
     }
-    return 'Der Account konnte nicht angelegt werden. Bitte versuch es erneut.';
+    // Unbekannter Fall: Originalmeldung anhängen. Ohne sie lässt sich von
+    // außen nicht erkennen, woran es lag – das kostete beim Einrichten
+    // schon einmal unnötig Zeit.
+    return `Der Account konnte nicht angelegt werden. (${error?.message ?? 'unbekannter Fehler'})`;
   }
 
   if (message.includes('invalid login credentials')) {

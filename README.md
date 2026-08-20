@@ -220,16 +220,28 @@ Da das SQL-Skript ausschließlich aus `create`/`grant`/`alter` besteht (kein
 Erfolgsmeldung – kein Fehler. Prüfen lässt sich das Ergebnis im **Table
 Editor**: Dort sollten `profiles` und `day_entries` auftauchen.
 
-### 3. E-Mail-Bestätigung ausschalten (wichtig!)
+### 3. Anmelde-Einstellungen setzen (wichtig!)
 
-Weil die App keine echten E-Mail-Adressen verwendet, darf Supabase keine
-Bestätigungsmail verlangen – sonst kann sich niemand anmelden.
+**Authentication → Sign In / Providers → Email** öffnen. Dort sind **zwei
+verschiedene Schalter** relevant – beide müssen stimmen:
 
-**Authentication → Sign In / Providers → Email** öffnen und
-**„Confirm email"** ausschalten. Speichern.
+| Schalter | Muss sein | Warum |
+|---|---|---|
+| **Email** (der Anbieter selbst) | **an** | Ist er aus, schlägt jede Registrierung mit „Email signups are disabled" fehl. |
+| **Confirm email** (darin) | **aus** | Sonst wartet Supabase auf eine Bestätigungsmail, die bei unseren technischen Adressen nie ankommt. |
 
-Bleibt diese Einstellung an, zeigt die App beim Registrieren einen
-entsprechenden Hinweis an.
+Der Anbieter „Email" ist die Überschrift des Abschnitts, „Confirm email"
+eine Option darin – nicht verwechseln. Nach dem Ändern **Save** drücken.
+
+Ob es passt, lässt sich ohne Anmeldung prüfen:
+
+```bash
+curl -s "https://<projekt-ref>.supabase.co/auth/v1/settings" -H "apikey: <anon-key>"
+```
+
+In der Antwort sollten `"email": true` (im Block `external`) und
+`"mailer_autoconfirm": true` stehen. Steht dort `"mailer_autoconfirm": false`,
+ist „Confirm email" noch an.
 
 ### 4. Zugangsdaten ins Frontend
 
