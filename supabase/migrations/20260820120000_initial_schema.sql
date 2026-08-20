@@ -1,7 +1,12 @@
--- Terminfinder – Supabase-Datenbankschema
+-- Terminfinder – Supabase-Datenbankschema (initiale Migration)
 --
--- Führe dieses Skript einmalig im Supabase-Dashboard aus:
--- Project -> SQL Editor -> New query -> Inhalt einfügen -> Run.
+-- Wird automatisch angewendet, sobald dieses Repository per GitHub-
+-- Integration mit deinem Supabase-Projekt verbunden ist (Supabase-
+-- Dashboard -> Project Settings -> Integrations -> GitHub Connection)
+-- und diese Datei auf den verbundenen Branch (i. d. R. main) gemerged
+-- wird. Ohne diese Integration kannst du den Inhalt stattdessen einmalig
+-- manuell im Supabase-Dashboard ausführen: Project -> SQL Editor ->
+-- New query -> Inhalt einfügen -> Run.
 --
 -- Sicherheitskonzept (siehe README.md, Abschnitt "Sicherheit"):
 --   Row Level Security ist auf allen vier Tabellen aktiviert, aber es gibt

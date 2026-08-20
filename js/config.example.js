@@ -15,7 +15,7 @@
 // Hinweis zur Sicherheit: Die Supabase-URL und der "anon"-Key sind
 // öffentliche, für den Browser bestimmte Werte (kein Geheimnis) – die
 // eigentliche Absicherung erfolgt über Row Level Security in der
-// Datenbank, siehe supabase/schema.sql und README.md.
+// Datenbank, siehe supabase/migrations/ und README.md.
 
 export const SUPABASE_URL = '__SUPABASE_URL__';
 export const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__';

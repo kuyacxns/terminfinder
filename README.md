@@ -53,9 +53,9 @@ wichtigsten Entscheidungen sind hier dokumentiert:
   Tabellenzugriff ist komplett gesperrt. Die App greift stattdessen
   ausschließlich über drei `SECURITY DEFINER`-Datenbankfunktionen zu
   (`get_poll_data`, `add_date_option`, `submit_response`, siehe
-  [`supabase/schema.sql`](supabase/schema.sql)), die jeweils die
-  Poll-ID als Parameter verlangen. Ohne die UUID aus dem Link kommt man
-  an nichts heran.
+  [`supabase/migrations/20260820120000_initial_schema.sql`](supabase/migrations/20260820120000_initial_schema.sql)),
+  die jeweils die Poll-ID als Parameter verlangen. Ohne die UUID aus dem
+  Link kommt man an nichts heran.
 
 - **„Nur eigene Stimme ändern“ läuft über den Namen, nicht über ein
   Konto.** Die Aufgabenstellung schließt Logins bewusst aus. Ein
@@ -87,6 +87,17 @@ wichtigsten Entscheidungen sind hier dokumentiert:
   bestimmt und kein Geheimnis; die eigentliche Absicherung übernimmt
   RLS.
 
+- **Schema als Supabase-Migration statt Einmal-Skript.** Das Datenbank-
+  schema liegt unter `supabase/migrations/` im von der Supabase CLI
+  erwarteten Format (`<Zeitstempel>_beschreibung.sql`). Verbindest du dein
+  Supabase-Projekt über die GitHub-Integration mit diesem Repository
+  (Supabase-Dashboard → Project Settings → Integrations → GitHub
+  Connection, Production-Branch `main`), wendet Supabase neue
+  Migrationen automatisch an, sobald sie auf `main` gemerged werden –
+  ganz ohne manuellen Copy-Paste-Schritt im SQL-Editor. Ohne diese
+  Integration funktioniert der ursprüngliche manuelle Weg (Inhalt der
+  Migrationsdatei im SQL-Editor ausführen) weiterhin unverändert.
+
 - **ES-Module + Supabase-JS per CDN (`esm.sh`).** Kein `npm install`,
   kein Bundler, direkt im Browser lauffähig. `js/pollLogic.js` und
   `js/utils.js` enthalten die reine, backend-unabhängige Logik
@@ -113,7 +124,8 @@ tests/
   pollLogic.test.js          Tests für Zählung/Rangfolge/Gleichstand
   utils.test.js               Tests für Validierung/Escaping
 supabase/
-  schema.sql                  Tabellen, RLS, RPC-Funktionen
+  config.toml                  Projekt-Konfiguration (CLI/GitHub-Integration)
+  migrations/                  Tabellen, RLS, RPC-Funktionen (SQL-Migrationen)
   .env.example                 Vorlage für lokale Function-Secrets
   functions/create-poll/       Edge Function: Passwortprüfung + Anlegen
 scripts/build.js               Baut dist/ für GitHub Pages
@@ -175,12 +187,38 @@ erfolgreich sind.
    kostenlos registrieren und ein neues Projekt erstellen (Region nahe
    an deinem Freundeskreis wählen).
 
-2. **Datenbankschema anlegen:** Im Supabase-Dashboard zu **SQL Editor**
-   → **New query**, den kompletten Inhalt von
-   [`supabase/schema.sql`](supabase/schema.sql) einfügen und **Run**
-   klicken. Das legt die vier Tabellen, Row-Level-Security (ohne
+2. **Datenbankschema anlegen** – zwei Wege, wähl einen:
+
+   - **Option A (empfohlen): GitHub-Integration.** Im Supabase-Dashboard
+     zu **Project Settings → Integrations → GitHub Connection** und das
+     Repository `<username>/terminfinder` verbinden, als
+     Production-Branch `main` auswählen. Sobald Migrationen unter
+     `supabase/migrations/` auf `main` gemerged werden, wendet Supabase
+     sie automatisch an – kein Copy-Paste in den SQL-Editor nötig.
+     Nach dem Verbinden (oder nach jedem neuen Merge) im Dashboard unter
+     **Database → Migrations** kurz prüfen, dass die Migration
+     `20260820120000_initial_schema.sql` als *applied* angezeigt wird.
+
+   - **Option B: manuell.** Im Supabase-Dashboard zu **SQL Editor** →
+     **New query**, den kompletten Inhalt von
+     [`supabase/migrations/20260820120000_initial_schema.sql`](supabase/migrations/20260820120000_initial_schema.sql)
+     einfügen und **Run** klicken.
+
+   Beide Wege legen dieselben vier Tabellen, Row-Level-Security (ohne
    Policies → dichter Tabellenzugriff) sowie die drei RPC-Funktionen
-   `get_poll_data`, `add_date_option` und `submit_response` an.
+   `get_poll_data`, `add_date_option` und `submit_response` an. Da das
+   SQL-Skript ausschließlich aus `CREATE TABLE`/`CREATE FUNCTION`/`GRANT`
+   besteht (kein `SELECT`), ist „Success. No rows returned“ im SQL
+   Editor die **erwartete** Erfolgsmeldung – kein Fehler. Prüfen lässt
+   sich der Erfolg im **Table Editor** (die vier Tabellen sollten
+   auftauchen) bzw. unter **Database → Functions** (die drei
+   RPC-Funktionen sollten auftauchen).
+
+   Künftige Schemaänderungen legst du als neue Datei in
+   `supabase/migrations/` ab (z. B. mit
+   `supabase migration new <beschreibung>`, falls die CLI installiert
+   ist) – so bleiben Datenbank und Repository-Historie über die
+   GitHub-Integration automatisch in Sync.
 
 3. **API-Zugangsdaten notieren:** **Project Settings → API** →
    `Project URL` und den `anon` `public` Key kopieren. Diese Werte sind
@@ -311,7 +349,8 @@ manuelles Server-Management, kein Neustart, keine Wartung – GitHub
   RPC-Funktionen, die jeweils die (unrätbare) `poll_id` verlangen.
 - **Eingabevalidierung & XSS-Schutz:** Titel, Beschreibung und Namen
   werden client- und serverseitig längenbegrenzt (siehe `js/utils.js`
-  und die `CHECK`-Constraints in `supabase/schema.sql`). Beim Rendern
+  und die `CHECK`-Constraints in
+  `supabase/migrations/20260820120000_initial_schema.sql`). Beim Rendern
   wird ausschließlich über `textContent`/DOM-APIs gearbeitet statt über
   `innerHTML`-Zusammenbau, wodurch eingegebener Text nie als HTML
   interpretiert wird.
