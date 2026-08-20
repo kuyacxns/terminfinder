@@ -3,20 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Terminfinder – Neue Umfrage erstellen</title>
-  <meta name="description" content="Findet unkompliziert den passenden Termin für euer nächstes Treffen – ganz ohne Anmeldung.">
+  <title>Terminfinder – Neuen Kalender anlegen</title>
+  <meta name="description" content="Gemeinsamer Kalender für den Freundeskreis: Jeder trägt ein, wann er Zeit hat.">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <div class="page">
     <header class="site-header">
       <h1>📅 Terminfinder</h1>
-      <p class="tagline">Findet ganz unkompliziert den passenden Termin für euer nächstes Treffen – ohne Anmeldung.</p>
+      <p class="tagline">
+        Ein gemeinsamer Kalender für euch: Jede/r trägt ein, wann Zeit ist –
+        und alle sehen sofort, an welchen Tagen die meisten können.
+      </p>
     </header>
 
     <main>
       <section id="create-section" class="card">
-        <h2>Neue Umfrage erstellen</h2>
+        <h2>Neuen Kalender anlegen</h2>
         <form id="create-form" novalidate>
           <label for="title">Titel *</label>
           <input id="title" name="title" type="text" maxlength="200" required placeholder="z. B. Grillabend bei Anna" autocomplete="off">
@@ -24,34 +27,40 @@
           <label for="description">Beschreibung (optional)</label>
           <textarea id="description" name="description" maxlength="2000" rows="3" placeholder="Ein paar Infos zum Treffen ..."></textarea>
 
-          <fieldset id="date-options-fieldset">
-            <legend>Terminvorschläge *</legend>
-            <div id="date-options-list"></div>
-            <button type="button" id="add-date-option-btn" class="btn-secondary">+ weiteren Termin</button>
-          </fieldset>
-
-          <label for="password">Passwort fürs Erstellen *</label>
+          <label for="password">Passwort fürs Anlegen *</label>
           <input id="password" name="password" type="password" required autocomplete="off" placeholder="Frag im Freundeskreis nach, falls du es nicht kennst">
-          <p class="hint">Das Erstellen neuer Umfragen ist mit einem gemeinsamen Passwort geschützt – Abstimmen über einen bestehenden Link braucht kein Passwort.</p>
+          <p class="hint">
+            Nur das Anlegen neuer Kalender ist mit einem gemeinsamen Passwort geschützt.
+            Wer den Link hat, kann sich ohne Passwort eintragen.
+          </p>
 
-          <button type="submit" id="submit-btn" class="btn-primary">Umfrage erstellen</button>
+          <button type="submit" id="submit-btn" class="btn-primary">Kalender anlegen</button>
           <p id="create-status" class="status" role="status" aria-live="polite"></p>
         </form>
       </section>
 
       <section id="success-section" class="card hidden">
-        <h2>🎉 Umfrage erstellt!</h2>
-        <p>Teile diesen Link mit deinen Freunden, damit sie abstimmen können:</p>
+        <h2>🎉 Kalender ist da!</h2>
+        <p>Teile diesen Link mit deinen Freunden – dann kann sich jede/r eintragen:</p>
         <div class="share-box">
-          <input id="share-link" type="text" readonly aria-label="Link zur Umfrage">
+          <input id="share-link" type="text" readonly aria-label="Link zum Kalender">
           <button type="button" id="copy-link-btn" class="btn-secondary">Link kopieren</button>
         </div>
-        <a id="open-poll-link" class="btn-primary link-btn" href="#">Zur Umfrage</a>
+        <a id="open-calendar-link" class="btn-primary link-btn" href="#">Zum Kalender</a>
+      </section>
+
+      <section class="card">
+        <h3>So funktioniert's</h3>
+        <ol class="how-to">
+          <li>Kalender anlegen und den Link in eure Gruppe schicken.</li>
+          <li>Jede/r öffnet den Link, tippt den Namen ein und markiert die Tage, an denen Zeit ist.</li>
+          <li>Alle sehen im Kalender, wer wann kann – und tragen sich bei passenden Tagen dazu.</li>
+        </ol>
       </section>
     </main>
 
     <footer class="site-footer">
-      <p>Keine Anmeldung nötig – einfach Link teilen und abstimmen.</p>
+      <p>Keine Anmeldung nötig – einfach Link teilen und eintragen.</p>
     </footer>
   </div>
 

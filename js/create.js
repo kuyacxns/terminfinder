@@ -2,50 +2,13 @@ import { supabase } from './supabaseClient.js';
 import { MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH } from './utils.js';
 
 const form = document.getElementById('create-form');
-const dateOptionsList = document.getElementById('date-options-list');
-const addDateOptionBtn = document.getElementById('add-date-option-btn');
 const statusEl = document.getElementById('create-status');
 const submitBtn = document.getElementById('submit-btn');
 const createSection = document.getElementById('create-section');
 const successSection = document.getElementById('success-section');
 const shareLinkInput = document.getElementById('share-link');
 const copyLinkBtn = document.getElementById('copy-link-btn');
-const openPollLink = document.getElementById('open-poll-link');
-
-function addDateOptionRow() {
-  const row = document.createElement('div');
-  row.className = 'date-option-row';
-
-  const input = document.createElement('input');
-  input.type = 'date';
-  input.required = true;
-  input.className = 'date-option-input';
-
-  const removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.className = 'remove-btn';
-  removeBtn.setAttribute('aria-label', 'Termin entfernen');
-  removeBtn.textContent = '✕';
-  removeBtn.addEventListener('click', () => {
-    row.remove();
-    updateRemoveButtonsVisibility();
-  });
-
-  row.append(input, removeBtn);
-  dateOptionsList.appendChild(row);
-  updateRemoveButtonsVisibility();
-}
-
-function updateRemoveButtonsVisibility() {
-  const rows = dateOptionsList.querySelectorAll('.date-option-row');
-  rows.forEach((row) => {
-    const btn = row.querySelector('.remove-btn');
-    btn.style.visibility = rows.length > 1 ? 'visible' : 'hidden';
-  });
-}
-
-addDateOptionBtn.addEventListener('click', addDateOptionRow);
-addDateOptionRow();
+const openCalendarLink = document.getElementById('open-calendar-link');
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -72,25 +35,17 @@ form.addEventListener('submit', async (event) => {
     setStatus(`Die Beschreibung darf höchstens ${MAX_DESCRIPTION_LENGTH} Zeichen lang sein.`, true);
     return;
   }
-
-  const dateInputs = Array.from(dateOptionsList.querySelectorAll('.date-option-input'));
-  const dateOptions = [...new Set(dateInputs.map((input) => input.value).filter(Boolean))];
-
-  if (dateOptions.length === 0) {
-    setStatus('Bitte gib mindestens einen gültigen Terminvorschlag an.', true);
-    return;
-  }
   if (!password) {
     setStatus('Bitte gib das Passwort ein.', true);
     return;
   }
 
   submitBtn.disabled = true;
-  setStatus('Umfrage wird erstellt ...');
+  setStatus('Kalender wird angelegt ...');
 
   try {
-    const { data, error } = await supabase.functions.invoke('create-poll', {
-      body: { title, description: description || null, password, dateOptions },
+    const { data, error } = await supabase.functions.invoke('create-calendar', {
+      body: { title, description: description || null, password },
     });
 
     if (error) {
@@ -117,15 +72,15 @@ async function extractFunctionErrorMessage(error) {
   } catch (_err) {
     // Antwort konnte nicht als JSON gelesen werden -> Fallback unten.
   }
-  return error?.message || 'Die Umfrage konnte nicht erstellt werden.';
+  return error?.message || 'Der Kalender konnte nicht angelegt werden.';
 }
 
-function showSuccess(pollId) {
-  const url = new URL('poll.html', window.location.href);
-  url.searchParams.set('id', pollId);
+function showSuccess(calendarId) {
+  const url = new URL('kalender.html', window.location.href);
+  url.searchParams.set('id', calendarId);
 
   shareLinkInput.value = url.toString();
-  openPollLink.href = url.toString();
+  openCalendarLink.href = url.toString();
 
   createSection.classList.add('hidden');
   successSection.classList.remove('hidden');
