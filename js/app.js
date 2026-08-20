@@ -80,6 +80,7 @@ const ui = {
   noteInput: el('note-input'),
   noteCounter: el('note-counter'),
   saveDayBtn: el('save-day-btn'),
+  deleteDayBtn: el('delete-day-btn'),
   dayStatus: el('day-status'),
   dayPeople: el('day-people'),
 
@@ -489,6 +490,39 @@ function wireDayPanel() {
   });
 
   ui.saveDayBtn.addEventListener('click', saveDay);
+  ui.deleteDayBtn.addEventListener('click', deleteDay);
+}
+
+/**
+ * Trägt einen für den gewählten Tag komplett aus – ein Tipp, ohne Umweg
+ * über die Schalter. Bewusst ohne Rückfrage: Der Eintrag ist mit einem
+ * weiteren Tipp auf den Tag wieder da, und eine Rückfrage würde genau die
+ * Erleichterung wieder auffressen, um die es hier geht.
+ */
+async function deleteDay() {
+  if (!state.selectedDate || !state.profile) return;
+
+  ui.deleteDayBtn.disabled = true;
+  setStatus(ui.dayStatus, 'Wird gelöscht ...');
+
+  try {
+    const { error } = await supabase
+      .from('day_entries')
+      .delete()
+      .eq('user_id', state.profile.id)
+      .eq('date', state.selectedDate);
+    if (error) throw error;
+
+    await loadEntries();
+    state.draft = { ...ownEntryFor(state.entries, state.profile.id, state.selectedDate) };
+    renderDayPanel();
+    render();
+    setStatus(ui.dayStatus, 'Eintrag gelöscht.');
+  } catch (_err) {
+    setStatus(ui.dayStatus, 'Das Löschen hat nicht geklappt. Bitte versuch es erneut.', true);
+  } finally {
+    ui.deleteDayBtn.disabled = false;
+  }
 }
 
 function renderDayPanel() {
@@ -511,7 +545,25 @@ function renderDayPanel() {
   ui.noteInput.value = state.draft.note ?? '';
   ui.noteCounter.textContent = `${(state.draft.note ?? '').length}/${MAX_NOTE_LENGTH}`;
 
+  renderDeleteButton();
   renderDayPeople();
+}
+
+/**
+ * Der Austragen-Knopf erscheint nur, wenn für den Tag auch wirklich etwas
+ * gespeichert ist. Die Beschriftung sagt dazu, was verloren geht – wer eine
+ * Notiz geschrieben hat, soll nicht überrascht werden.
+ */
+function renderDeleteButton() {
+  const saved = state.entries.find(
+    (entry) => entry.user_id === state.profile?.id && entry.date === state.selectedDate
+  );
+
+  ui.deleteDayBtn.classList.toggle('hidden', !saved);
+  if (!saved) return;
+
+  const hasNote = Boolean(saved.note && saved.note.trim());
+  ui.deleteDayBtn.textContent = hasNote ? 'Eintrag & Notiz löschen' : 'Austragen';
 }
 
 function renderDayPeople() {
