@@ -346,7 +346,7 @@ function wireCalendar() {
     const [year, month] = today.split('-').map(Number);
     state.year = year;
     state.month = month;
-    selectDay(today, { toggle: false });
+    selectDay(today);
   });
 }
 
@@ -424,13 +424,12 @@ function renderGrid() {
     }`;
     button.setAttribute('aria-label', label);
 
-    button.addEventListener('click', () => selectDay(cell.iso, { toggle: true }));
+    button.addEventListener('click', () => selectDay(cell.iso));
     ui.grid.appendChild(button);
   }
 }
 
 function isOwnAvailable(isoDate) {
-  if (state.selectedDate === isoDate && state.draft) return state.draft.is_available;
   return state.entries.some(
     (entry) => entry.user_id === state.profile?.id && entry.date === isoDate && entry.is_available
   );
@@ -441,15 +440,14 @@ function isOwnAvailable(isoDate) {
  * direkt ein bzw. aus (das ist der häufigste Fall und soll mit einem Tipp
  * gehen) und öffnet darunter die Details für Uhrzeit und Notiz.
  */
-function selectDay(isoDate, { toggle }) {
-  const switchingDay = state.selectedDate !== isoDate;
-
-  if (switchingDay) {
+/**
+ * Öffnet einen Tag im Bereich darunter. Das Antippen trägt bewusst noch
+ * nichts ein – erst "Speichern" macht die Auswahl für alle sichtbar.
+ */
+function selectDay(isoDate) {
+  if (state.selectedDate !== isoDate) {
     state.selectedDate = isoDate;
     state.draft = { ...ownEntryFor(state.entries, state.profile.id, isoDate) };
-  }
-  if (toggle) {
-    state.draft.is_available = !state.draft.is_available;
   }
 
   render();
@@ -462,8 +460,6 @@ function wireDayPanel() {
   ui.availableToggle.addEventListener('change', () => {
     state.draft.is_available = ui.availableToggle.checked;
     renderDayPanel();
-    renderGrid();
-    renderRanking();
   });
 
   ui.allDayToggle.addEventListener('change', () => {
@@ -495,9 +491,9 @@ function wireDayPanel() {
 
 /**
  * Trägt einen für den gewählten Tag komplett aus – ein Tipp, ohne Umweg
- * über die Schalter. Bewusst ohne Rückfrage: Der Eintrag ist mit einem
- * weiteren Tipp auf den Tag wieder da, und eine Rückfrage würde genau die
- * Erleichterung wieder auffressen, um die es hier geht.
+ * über die Schalter. Bewusst ohne Rückfrage: Eintragen kann man sich
+ * jederzeit wieder, und eine Rückfrage würde genau die Erleichterung
+ * wieder auffressen, um die es hier geht.
  */
 async function deleteDay() {
   if (!state.selectedDate || !state.profile) return;
@@ -686,8 +682,7 @@ async function saveDay() {
 // ------------------------------------------------------------------ Rangliste
 
 function renderRanking() {
-  const entries = draftAwareEntries();
-  const ranked = rankDays(entries, { from: today });
+  const ranked = rankDays(state.entries, { from: today });
   const top = new Set(getTopDays(ranked, 3).map((day) => day.date));
 
   ui.ranking.replaceChildren();
@@ -731,7 +726,7 @@ function renderRanking() {
       const [year, month] = day.date.split('-').map(Number);
       state.year = year;
       state.month = month;
-      selectDay(day.date, { toggle: false });
+      selectDay(day.date);
     });
 
     ui.ranking.appendChild(item);
@@ -742,24 +737,7 @@ function renderRanking() {
  * Rangliste und Kalender sollen sofort auf Änderungen reagieren, auch wenn
  * sie noch nicht gespeichert sind – sonst wirkt die Oberfläche träge.
  */
-function draftAwareEntries() {
-  if (!state.selectedDate || !state.draft || !state.profile) return state.entries;
 
-  const others = state.entries.filter(
-    (entry) => !(entry.user_id === state.profile.id && entry.date === state.selectedDate)
-  );
-  if (isEmptyEntry(state.draft)) return others;
-
-  return [...others, { ...state.draft, profiles: profileSummary(state.profile) }];
-}
-
-function profileSummary(profile) {
-  return {
-    display_name: profile.display_name,
-    avatar_emoji: profile.avatar_emoji,
-    avatar_color: profile.avatar_color,
-  };
-}
 
 // ------------------------------------------------------------------ Bausteine
 
