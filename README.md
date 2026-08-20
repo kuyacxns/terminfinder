@@ -62,9 +62,15 @@ Supabase-Projekt (Postgres).
 3. **Verfeinern:** Direkt unter dem Kalender öffnet sich der Tag. Dort
    lassen sich *Ganzer Tag* abwählen und eine Uhrzeit setzen sowie eine
    Notiz schreiben. Danach auf **Speichern** tippen.
-4. **Schauen, was die anderen machen:** Im selben Bereich stehen alle, die
+4. **Umentscheiden:** Im selben Bereich steht unter *Speichern* der Knopf
+   **Austragen** – ein Tipp, und dein Eintrag für den Tag ist weg. Er
+   erscheint nur, wenn für den Tag auch wirklich etwas gespeichert ist,
+   und heißt *Eintrag & Notiz löschen*, falls eine Notiz mit verloren
+   ginge. Eine Rückfrage gibt es bewusst nicht – ein Tipp auf den Tag
+   trägt dich jederzeit wieder ein.
+5. **Schauen, was die anderen machen:** Im selben Bereich stehen alle, die
    an dem Tag Zeit haben (mit ihren Uhrzeiten), und darunter alle Notizen.
-5. **Besten Tag finden:** Ganz unten steht die Rangliste. Ein Tipp auf eine
+6. **Besten Tag finden:** Ganz unten steht die Rangliste. Ein Tipp auf eine
    Zeile springt zu dem Tag im Kalender.
 
 Die Farben im Kalender bedeuten:
