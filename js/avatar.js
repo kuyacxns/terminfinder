@@ -6,10 +6,26 @@
 
 import { canonicalizeName, hashString } from './utils.js';
 
+// Nach Themen sortiert, damit die Auswahl im Profil übersichtlich bleibt.
+// Bewusst nur einfache Emoji ohne Variationsselektor oder ZWJ-Sequenzen:
+// die bleiben kurz genug für die Längenprüfung in der Datenbank
+// (avatar_emoji: 1–8 Zeichen) und werden auf allen Geräten gleich dargestellt.
 export const AVATAR_EMOJIS = [
+  // Tiere
   '🦊', '🐼', '🐨', '🦁', '🐸', '🐙', '🦄', '🐝',
-  '🐧', '🦉', '🐳', '🦖', '🌸', '🌵', '🍕', '🎸',
-  '🚀', '⚡', '🌈', '🍀', '🔥', '🎈', '🍩', '🎨',
+  '🐧', '🦉', '🐳', '🦖', '🐰', '🐹', '🐱', '🐶',
+  '🐷', '🐮', '🐵', '🐔', '🦆', '🦋', '🐬', '🐢',
+  '🦔', '🦥', '🦦', '🦇', '🐺', '🦌', '🦩', '🦜',
+  '🐠', '🦀', '🐌', '🐞', '🐘', '🦒', '🐻', '🐯',
+  // Süßes
+  '🍩', '🍦', '🧁', '🍪', '🍫', '🍓', '🍒', '🍑',
+  '🍰', '🍯', '🍕', '🍿', '🥐', '🥑', '🍄', '🍉',
+  // Natur
+  '🌸', '🌵', '🌈', '🍀', '🌻', '🌙', '⭐', '🌊',
+  '🔥', '🌴', '🌼', '🍁',
+  // Sonstiges
+  '🚀', '🎸', '🎈', '🎨', '🎧', '🎮', '⚡', '💎',
+  '🎁', '👑', '🪐', '🛹',
 ];
 
 export const AVATAR_COLORS = [

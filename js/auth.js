@@ -112,6 +112,56 @@ export async function ensureProfile(fallbackName) {
   return created;
 }
 
+/**
+ * Ändert den eigenen Anzeigenamen.
+ *
+ * Wichtig: Die Anmelde-Kennung wird aus dem Namen abgeleitet (siehe
+ * nameToAuthEmail()). Sie muss deshalb mitgeändert werden – sonst müsste
+ * man sich weiterhin mit dem alten Namen anmelden, ohne dass das
+ * irgendwo sichtbar wäre.
+ *
+ * Reihenfolge mit Absicht: erst das Profil (dort schlägt ein bereits
+ * vergebener Name sofort fehl), dann die Kennung. Klappt der zweite
+ * Schritt nicht, wird der erste zurückgenommen, damit Anzeigename und
+ * Anmeldename nie auseinanderlaufen.
+ */
+export async function updateDisplayName(userId, newName, previousName) {
+  const { data: updated, error: profileError } = await supabase
+    .from('profiles')
+    .update({ display_name: newName })
+    .eq('id', userId)
+    .select('id, display_name, avatar_emoji, avatar_color')
+    .single();
+
+  if (profileError) {
+    if (isUniqueViolation(profileError)) {
+      throw new Error('Diesen Namen benutzt schon jemand. Bitte wähle einen anderen.');
+    }
+    throw new Error('Dein Name konnte nicht geändert werden.');
+  }
+
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      email: nameToAuthEmail(newName),
+      data: { display_name: newName },
+    });
+    if (error) throw error;
+
+    // Steht die Umstellung noch aus (in Supabase ist eine Bestätigung
+    // aktiv), käme die Person mit dem neuen Namen nicht hinein – an die
+    // technische Adresse geht ja nie eine Mail.
+    if (data?.user?.new_email) throw new Error('Umstellung steht noch aus');
+  } catch (_err) {
+    await supabase.from('profiles').update({ display_name: previousName }).eq('id', userId);
+    throw new Error(
+      'Der Name ließ sich nicht umstellen, weil die Anmeldung nicht mitgeändert werden konnte. ' +
+        'Es bleibt beim bisherigen Namen.'
+    );
+  }
+
+  return updated;
+}
+
 /** Ändert Emoji und Farbe des eigenen Profilbilds. */
 export async function updateAvatar(userId, { emoji, color }) {
   const { data, error } = await supabase

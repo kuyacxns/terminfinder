@@ -278,11 +278,53 @@ textarea { resize: vertical; }
 
 .me-name { font-weight: 700; color: var(--text); }
 
+.profile-panel h4 {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.name-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.name-row input { flex: 1; min-width: 0; }
+
+.btn-secondary {
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-height: 48px;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 2px solid var(--primary);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.btn-secondary:disabled { opacity: 0.6; cursor: default; }
+
 .profile-panel .choice-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin-bottom: 0.6rem;
+}
+
+/* Die Emoji-Auswahl ist lang – auf dem Handy scrollt sie in sich, damit
+   die Farben und der Rest der Seite erreichbar bleiben. */
+.choice-grid-scroll {
+  max-height: 232px;
+  overflow-y: auto;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
 }
 
 .choice-chip, .choice-swatch {
