@@ -1,6 +1,10 @@
 // Reine Berechnungs-Logik rund um den gemeinsamen Kalender – unabhängig von
 // Backend und DOM, damit sie sich einfach automatisiert testen lässt
 // (siehe tests/calendarLogic.test.js).
+//
+// Ein "Eintrag" (day_entry) hat die Form:
+//   { user_id, date, is_available, all_day, start_time, end_time, note,
+//     profiles: { display_name, avatar_emoji, avatar_color } }
 
 const MS_PER_DAY = 86400000;
 
@@ -22,27 +26,50 @@ export function toLocalIsoDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+/** Samstag oder Sonntag? (Grundlage für die bunte Wochenend-Markierung.) */
+export function isWeekend(isoDate) {
+  const weekday = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+  return weekday === 0 || weekday === 6;
+}
+
 /**
  * Fasst alle Einträge pro Tag zusammen.
  *
- * @param {{participant_name:string, date:string}[]} entries
- * @returns {Map<string, {date:string, count:number, names:string[]}>}
+ * `available` enthält nur die Leute, die an dem Tag Zeit haben,
+ * `notes` alle Notizen – auch von Leuten ohne Zeit, denn eine Notiz soll
+ * ausdrücklich unabhängig von der Verfügbarkeit möglich sein.
+ *
+ * @param {object[]} entries
+ * @returns {Map<string, {date:string, count:number, available:object[], notes:object[]}>}
  */
 export function aggregateByDate(entries) {
   const byDate = new Map();
+
   for (const entry of entries) {
-    let item = byDate.get(entry.date);
-    if (!item) {
-      item = { date: entry.date, count: 0, names: [] };
-      byDate.set(entry.date, item);
+    let day = byDate.get(entry.date);
+    if (!day) {
+      day = { date: entry.date, count: 0, available: [], notes: [] };
+      byDate.set(entry.date, day);
     }
-    item.count += 1;
-    item.names.push(entry.participant_name);
+    if (entry.is_available) {
+      day.available.push(entry);
+      day.count += 1;
+    }
+    if (entry.note && entry.note.trim()) {
+      day.notes.push(entry);
+    }
   }
-  for (const item of byDate.values()) {
-    item.names.sort((a, b) => a.localeCompare(b, 'de'));
+
+  const byName = (a, b) => displayName(a).localeCompare(displayName(b), 'de');
+  for (const day of byDate.values()) {
+    day.available.sort(byName);
+    day.notes.sort(byName);
   }
   return byDate;
+}
+
+function displayName(entry) {
+  return entry.profiles?.display_name ?? '';
 }
 
 /**
@@ -50,10 +77,18 @@ export function aggregateByDate(entries) {
  * Datum aufsteigend) und vergibt einen "dense rank" (1, 2, 2, 3, ...), damit
  * Plätze bei Gleichstand nicht übersprungen werden.
  *
- * @param {{participant_name:string, date:string}[]} entries
+ * Tage ohne Verfügbarkeiten (also reine Notiz-Tage) tauchen in der
+ * Rangliste nicht auf – dort geht es darum, wann die meisten Zeit haben.
+ *
+ * @param {object[]} entries
+ * @param {{from?: string}} [options] `from` blendet frühere Tage aus
  */
-export function rankDays(entries) {
-  const days = Array.from(aggregateByDate(entries).values());
+export function rankDays(entries, options = {}) {
+  const { from } = options;
+
+  const days = Array.from(aggregateByDate(entries).values())
+    .filter((day) => day.count > 0)
+    .filter((day) => !from || day.date >= from);
 
   days.sort((a, b) => {
     if (b.count !== a.count) return b.count - a.count;
@@ -82,7 +117,7 @@ export function rankDays(entries) {
  * @param {number} topN
  */
 export function getTopDays(ranked, topN = 3) {
-  return ranked.filter((day) => day.count > 0 && day.rank <= topN);
+  return ranked.filter((day) => day.rank <= topN);
 }
 
 /**
@@ -105,10 +140,12 @@ export function buildMonthGrid(year, month) {
   const cells = [];
   for (let i = 0; i < 42; i += 1) {
     const date = new Date(gridStart + i * MS_PER_DAY);
+    const iso = toIsoDate(date);
     cells.push({
-      iso: toIsoDate(date),
+      iso,
       day: date.getUTCDate(),
       inCurrentMonth: date.getUTCFullYear() === year && date.getUTCMonth() === month - 1,
+      weekend: isWeekend(iso),
     });
   }
   return cells;
@@ -116,35 +153,41 @@ export function buildMonthGrid(year, month) {
 
 /** Verschiebt einen Monat um `delta` Monate (mit Jahreswechsel). */
 export function shiftMonth(year, month, delta) {
-  const zeroBased = (year * 12 + (month - 1)) + delta;
+  const zeroBased = year * 12 + (month - 1) + delta;
   return { year: Math.floor(zeroBased / 12), month: (zeroBased % 12) + 1 };
 }
 
 /**
- * Ersetzt die Einträge einer Person durch ihre aktuelle Auswahl. Damit zeigt
- * die Oberfläche sofort den Stand inklusive noch nicht gespeicherter
- * Änderungen an, ohne dass dafür der Server gefragt werden muss.
- *
- * @param {{participant_name:string, date:string}[]} entries alle gespeicherten Einträge
- * @param {string} name eigener Name ('' = niemand ausgewählt)
- * @param {Iterable<string>} selectedDates eigene, ggf. ungespeicherte Auswahl
+ * Findet den eigenen Eintrag für einen Tag – oder gibt einen leeren
+ * Standard-Eintrag zurück, damit die Oberfläche immer mit derselben Form
+ * arbeiten kann.
  */
-export function withOwnSelection(entries, name, selectedDates) {
-  const key = name.trim().toLowerCase();
-  if (!key) return [...entries];
-
-  const others = entries.filter((entry) => entry.participant_name.trim().toLowerCase() !== key);
-  const own = Array.from(selectedDates, (date) => ({ participant_name: name.trim(), date }));
-  return [...others, ...own];
+export function ownEntryFor(entries, userId, isoDate) {
+  const found = entries.find((entry) => entry.user_id === userId && entry.date === isoDate);
+  return (
+    found ?? {
+      user_id: userId,
+      date: isoDate,
+      is_available: false,
+      all_day: true,
+      start_time: null,
+      end_time: null,
+      note: '',
+    }
+  );
 }
 
-/** Alle Tage, an denen die genannte Person bereits eingetragen ist. */
-export function ownDates(entries, name) {
-  const key = name.trim().toLowerCase();
-  if (!key) return new Set();
+/** Alle Tage, an denen die genannte Person Zeit hat. */
+export function ownAvailableDates(entries, userId) {
   return new Set(
-    entries
-      .filter((entry) => entry.participant_name.trim().toLowerCase() === key)
-      .map((entry) => entry.date)
+    entries.filter((entry) => entry.user_id === userId && entry.is_available).map((e) => e.date)
   );
+}
+
+/**
+ * Ist der Eintrag komplett leer (keine Zeit, keine Notiz)? Solche Zeilen
+ * werden beim Speichern gelöscht statt angelegt.
+ */
+export function isEmptyEntry(entry) {
+  return !entry.is_available && !(entry.note && entry.note.trim());
 }
