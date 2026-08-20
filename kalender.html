@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terminfinder – Kalender</title>
+  <meta name="description" content="Trag ein, wann du Zeit hast, und sieh, wann die anderen können.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a href="index.html" class="home-link">📅 Terminfinder</a>
+    </header>
+
+    <main>
+      <p id="loading" class="status">Kalender wird geladen ...</p>
+      <p id="error-box" class="status status-error hidden" role="alert"></p>
+
+      <div id="calendar-content" class="hidden">
+        <section class="card">
+          <h2 id="calendar-title"></h2>
+          <p id="calendar-description" class="hidden"></p>
+          <div class="share-box">
+            <input id="share-link" type="text" readonly aria-label="Link zum Kalender">
+            <button type="button" id="copy-link-btn" class="btn-secondary">Link kopieren</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <label for="participant-name">Dein Name</label>
+          <input id="participant-name" type="text" maxlength="100" placeholder="z. B. Anna" autocomplete="name">
+          <p class="hint">Tipp die Tage an, an denen du Zeit hast. Nochmal antippen entfernt dich wieder.</p>
+
+          <div class="calendar-nav">
+            <button type="button" id="prev-month-btn" class="nav-btn" aria-label="Vorheriger Monat">‹</button>
+            <span id="month-label" class="month-label" aria-live="polite"></span>
+            <button type="button" id="next-month-btn" class="nav-btn" aria-label="Nächster Monat">›</button>
+          </div>
+
+          <div class="weekday-row" aria-hidden="true">
+            <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span>
+            <span>Fr</span><span>Sa</span><span>So</span>
+          </div>
+          <div id="calendar-grid" class="calendar-grid"></div>
+
+          <div class="legend">
+            <span class="legend-item"><span class="legend-swatch swatch-mine"></span> Du hast Zeit</span>
+            <span class="legend-item"><span class="legend-swatch swatch-others"></span> Andere haben Zeit</span>
+          </div>
+
+          <button type="button" id="save-btn" class="btn-primary" disabled>Gespeichert</button>
+          <p id="save-status" class="status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="card">
+          <h3>Wer kann wann?</h3>
+          <p id="overview-empty" class="status hidden">
+            Noch hat sich niemand eingetragen – trag dich als Erste/r ein!
+          </p>
+          <ul id="overview-list" class="overview-list"></ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p><a href="index.html">Eigenen neuen Kalender anlegen</a></p>
+    </footer>
+  </div>
+
+  <script type="module" src="js/calendar.js"></script>
+</body>
+</html>

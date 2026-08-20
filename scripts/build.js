@@ -1,6 +1,6 @@
 // Sehr einfacher, abhängigkeitsfreier Build-Schritt für GitHub Pages.
 //
-// Kopiert die statischen Dateien (index.html, poll.html, css/, js/) nach
+// Kopiert die statischen Dateien (index.html, kalender.html, css/, js/) nach
 // dist/ und erzeugt dist/js/config.js aus js/config.example.js, wobei die
 // Platzhalter __SUPABASE_URL__ / __SUPABASE_ANON_KEY__ durch die
 // gleichnamigen Umgebungsvariablen ersetzt werden (im GitHub-Actions-
@@ -14,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const distDir = path.join(root, 'dist');
 
-const ITEMS_TO_COPY = ['index.html', 'poll.html', 'css', 'js'];
+const ITEMS_TO_COPY = ['index.html', 'kalender.html', 'css', 'js'];
 
 async function copyRecursive(src, dest) {
   const stat = await fs.stat(src);

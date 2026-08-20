@@ -1,17 +1,18 @@
 # 📅 Terminfinder
 
-Eine kleine, kostenlose Web-App zur Terminfindung im Freundeskreis – wie
-Doodle, aber selbst gehostet über **GitHub Pages** (statisches
-HTML/CSS/JS, kein eigener Server) mit **Supabase** als Backend
-(Postgres-Datenbank, direkt aus dem Browser über das offizielle
-Client-SDK angesprochen).
+Ein gemeinsamer Kalender für den Freundeskreis: Jede/r trägt direkt ein,
+wann Zeit ist – und sieht dabei, an welchen Tagen sich schon andere
+eingetragen haben, um sich dort dazuzustellen. Am Ende zeigt eine
+Übersicht, an welchen Tagen die meisten können.
 
-Ein Organisator erstellt eine Umfrage mit ein paar Terminvorschlägen und
-bekommt einen eindeutigen, nicht erratbaren Link. Alle Freunde öffnen
-diesen Link auf ihrem eigenen Gerät, tragen ihren Namen ein, kreuzen an,
-wann sie Zeit haben (und können eigene Terminvorschläge ergänzen). Am
-Ende sieht jeder die Ergebnisse – die drei beliebtesten Termine werden
-als **Top 3** hervorgehoben.
+Läuft als statische Web-App über **GitHub Pages** (reines HTML/CSS/JS,
+kein eigener Server) mit **Supabase** als Backend (Postgres, direkt aus
+dem Browser über das offizielle Client-SDK angesprochen).
+
+**So läuft's ab:** Jemand legt einen Kalender an und bekommt einen
+eindeutigen, nicht erratbaren Link. Alle öffnen diesen Link auf ihrem
+eigenen Gerät, tippen ihren Namen ein und markieren im Kalender die Tage,
+an denen sie Zeit haben. Kein Login, keine Registrierung.
 
 ---
 
@@ -33,98 +34,102 @@ als **Top 3** hervorgehoben.
 
 ## Architektur & Entscheidungen
 
-Diese App wurde ohne Rückfrage-Blocker pragmatisch umgesetzt; die
-wichtigsten Entscheidungen sind hier dokumentiert:
+- **Backend: Supabase statt Firebase.** Das Datenmodell ist klar
+  relational – Postgres mit Fremdschlüsseln und einem eindeutigen Index
+  passt hier natürlicher als Firestore-Collections. Supabase hat
+  außerdem einen großzügigen kostenlosen Tarif, echtes SQL und Row Level
+  Security.
 
-- **Backend: Supabase statt Firebase.** Das Datenmodell aus der
-  Aufgabenstellung (Poll, DateOption, Response, ResponseSelection) ist
-  klar relational – Postgres mit ein paar Fremdschlüsseln und einem
-  `UNIQUE`-Index passt hier natürlicher als Firestore-Collections.
-  Supabase hat außerdem einen großzügigen kostenlosen Tarif, echtes SQL
-  (transaktionssichere Stimmenzählung) und Row Level Security.
+- **Zwei Tabellen genügen.** Ein `calendar` (Titel, Beschreibung) und
+  beliebig viele `availabilities` (`calendar_id`, `participant_name`,
+  `date`). Ein Tag „existiert“ im Kalender genau dann, wenn sich jemand
+  dafür eingetragen hat – es braucht also keine vom Organisator
+  vorgegebenen Terminoptionen und keine separate Abstimmungstabelle.
 
 - **RPC-only statt offener Tabellenzugriff.** Row Level Security allein
   reicht hier nicht aus: Eine Policy wie „SELECT erlaubt“ würde zwar pro
   Zeile funktionieren, aber nichts daran hindern, dass jemand **alle**
-  Umfragen einer Tabelle auflistet (`GET /polls?select=*`) und sich so
-  Zugriff auf fremde, eigentlich nur über den unrätbaren Link erreichbare
-  Umfragen verschafft. Deshalb ist RLS auf allen vier Tabellen aktiv,
-  aber **ohne** Policies für `anon`/`authenticated` – direkter
-  Tabellenzugriff ist komplett gesperrt. Die App greift stattdessen
-  ausschließlich über drei `SECURITY DEFINER`-Datenbankfunktionen zu
-  (`get_poll_data`, `add_date_option`, `submit_response`, siehe
-  [`supabase/migrations/20260820120000_initial_schema.sql`](supabase/migrations/20260820120000_initial_schema.sql)),
-  die jeweils die Poll-ID als Parameter verlangen. Ohne die UUID aus dem
-  Link kommt man an nichts heran.
+  Kalender auflistet (`GET /calendars?select=*`) und sich so Zugriff auf
+  fremde, eigentlich nur über den unrätbaren Link erreichbare Kalender
+  verschafft. Deshalb ist RLS auf beiden Tabellen aktiv, aber **ohne**
+  Policies für `anon`/`authenticated` – direkter Tabellenzugriff ist
+  komplett gesperrt. Die App greift ausschließlich über zwei
+  `SECURITY DEFINER`-Datenbankfunktionen zu (`get_calendar_data`,
+  `set_availability`), die jeweils die Kalender-ID als Parameter
+  verlangen. Ohne die UUID aus dem Link kommt man an nichts heran.
 
-- **„Nur eigene Stimme ändern“ läuft über den Namen, nicht über ein
-  Konto.** Die Aufgabenstellung schließt Logins bewusst aus. Ein
-  erneutes Abstimmen unter demselben Namen (Groß-/Kleinschreibung
-  ignoriert) aktualisiert die bestehende `response`-Zeile statt eine
-  neue anzulegen – durchgesetzt über einen eindeutigen Index
-  `(poll_id, lower(participant_name))` in Postgres. Das ist bewusst so
-  simpel wie bei echtem Doodle: Wer den Namen eines anderen benutzt,
-  kann dessen Stimme überschreiben. Eine stärkere Zuordnung würde eine
-  Form von Identität (Login oder zumindest anonyme Auth) voraussetzen,
-  was explizit nicht gewünscht war.
+- **„Nur den eigenen Eintrag ändern“ läuft über den Namen, nicht über
+  ein Konto.** Logins sind bewusst ausgeschlossen. `set_availability`
+  ersetzt alle Einträge derselben Person (Groß-/Kleinschreibung
+  ignoriert) – erneutes Eintragen unter demselben Namen aktualisiert
+  also die Auswahl, statt Duplikate anzulegen; abgesichert zusätzlich
+  über einen eindeutigen Index auf
+  `(calendar_id, lower(participant_name), date)`. Das ist bewusst so
+  simpel wie bei Doodle: Wer den Namen einer anderen Person benutzt,
+  kann deren Eintrag überschreiben. Eine stärkere Zuordnung würde eine
+  Form von Identität voraussetzen, die hier nicht gewünscht ist.
 
-- **Passwortschutz fürs Erstellen über eine Supabase Edge Function.**
+- **Passwortschutz fürs Anlegen über eine Supabase Edge Function.**
   Rein clientseitiger Code kann kein Geheimnis wahren. Die Function
-  [`supabase/functions/create-poll`](supabase/functions/create-poll/index.ts)
+  [`supabase/functions/create-calendar`](supabase/functions/create-calendar/index.ts)
   prüft das eingesandte Passwort serverseitig (SHA-256-Hash-Vergleich
-  gegen ein Secret) und legt die Umfrage danach mit dem
+  gegen ein Secret) und legt den Kalender danach mit dem
   Service-Role-Key an – dieser Key existiert ausschließlich in der
-  Function-Umgebung, niemals im Browser. Abstimmen über einen
-  bestehenden Link bleibt bewusst passwortfrei.
+  Function-Umgebung, niemals im Browser. Sich in einen bestehenden
+  Kalender einzutragen bleibt passwortfrei.
 
-- **GitHub-Actions-Build nur für die Config-Injection.** Die App selbst
-  ist reines HTML/CSS/JS ohne Bundler. Der einzige Grund für einen
+- **Lokal auswählen, bewusst speichern.** Ein Tipp auf einen Tag ändert
+  die Auswahl zunächst nur lokal; erst „Änderungen speichern“ schreibt
+  sie in die Datenbank. Das ist robuster als Auto-Save pro Tipp (keine
+  halbfertigen Zustände bei wackligem Mobilfunknetz) und macht trotzdem
+  sofort sichtbar, wie sich die eigene Auswahl auf die Übersicht
+  auswirkt.
+
+- **Alles in UTC gerechnet.** Das Kalenderraster und die Datumsanzeige
+  arbeiten durchgehend mit UTC-Datumsanteilen, passend zum `date`-Typ in
+  Postgres. Nur „heute“ wird aus der lokalen Zeitzone abgeleitet – sonst
+  würde der Kalender um 00:30 Uhr deutscher Zeit noch den Vortag
+  markieren. Die Tests laufen bewusst auch unter fremden Zeitzonen
+  (siehe [Automatisierte Tests](#automatisierte-tests)).
+
+- **GitHub-Actions-Build nur für die Config-Injection.** Die App ist
+  reines HTML/CSS/JS ohne Bundler. Der einzige Grund für einen
   Build-Schritt ist, `js/config.js` (Supabase-URL + Anon-Key) nicht im
   Klartext committen zu müssen, sondern beim Deployment aus
   Repository-Variablen zu erzeugen (siehe
-  [`scripts/build.js`](scripts/build.js)). Das ist rein organisatorisch
-  – die Werte selbst sind laut Supabase-Doku ohnehin für den Browser
-  bestimmt und kein Geheimnis; die eigentliche Absicherung übernimmt
-  RLS.
-
-- **Schema als Supabase-Migration statt Einmal-Skript.** Das Datenbank-
-  schema liegt unter `supabase/migrations/` im von der Supabase CLI
-  erwarteten Format (`<Zeitstempel>_beschreibung.sql`). Das ist die
-  Grundlage für sauberes Schema-Versioning, auch wenn Supabase eine neu
-  verbundene Migration nicht von selbst anwendet (siehe unten) – neue
-  Schemaänderungen bleiben so trotzdem nachvollziehbar im Repository
-  dokumentiert, statt als Wegwerf-SQL verloren zu gehen.
+  [`scripts/build.js`](scripts/build.js)). Die Werte selbst sind laut
+  Supabase-Doku ohnehin für den Browser bestimmt und kein Geheimnis; die
+  eigentliche Absicherung übernimmt RLS.
 
 - **ES-Module + Supabase-JS per CDN (`esm.sh`).** Kein `npm install`,
-  kein Bundler, direkt im Browser lauffähig. `js/pollLogic.js` und
-  `js/utils.js` enthalten die reine, backend-unabhängige Logik
-  (Stimmen zählen, Rangfolge, Validierung) und werden 1:1 in
-  `tests/` mit dem in Node eingebauten Test-Runner getestet – ganz ohne
-  zusätzliche Abhängigkeiten.
+  kein Bundler, direkt im Browser lauffähig. `js/calendarLogic.js`
+  enthält die reine, backend- und DOM-unabhängige Logik (Kalenderraster,
+  Auszählung, Rangfolge) und wird 1:1 mit dem in Node eingebauten
+  Test-Runner getestet – ganz ohne zusätzliche Abhängigkeiten.
 
 ---
 
 ## Projektstruktur
 
 ```
-index.html                 Startseite: neue Umfrage erstellen
-poll.html                  Umfrage-/Abstimmungs-/Ergebnisseite
-css/styles.css              Responsive, Mobile-First-Styling
+index.html                     Startseite: neuen Kalender anlegen
+kalender.html                  Kalenderansicht: eintragen + Übersicht
+css/styles.css                 Responsive, Mobile-First-Styling
 js/
-  config.example.js        Vorlage für Supabase-Verbindungsdaten
-  supabaseClient.js         Erstellt den Supabase-Client
-  utils.js                  Validierung, Escaping, Datumsformatierung
-  pollLogic.js               Stimmen zählen, Rangfolge/Top-3 (reine Logik)
-  create.js                  Seiten-Logik für index.html
-  poll.js                    Seiten-Logik für poll.html
+  config.example.js            Vorlage für Supabase-Verbindungsdaten
+  supabaseClient.js            Erstellt den Supabase-Client
+  utils.js                     Validierung, Datumsformatierung
+  calendarLogic.js             Kalenderraster, Auszählung, Rangfolge (reine Logik)
+  create.js                    Seiten-Logik für index.html
+  calendar.js                  Seiten-Logik für kalender.html
 tests/
-  pollLogic.test.js          Tests für Zählung/Rangfolge/Gleichstand
-  utils.test.js               Tests für Validierung/Escaping
+  calendarLogic.test.js        Tests für Raster, Auszählung, Gleichstände
+  utils.test.js                Tests für Validierung/Datumsformat
 supabase/
   config.toml                  Projekt-Konfiguration (CLI/GitHub-Integration)
-  migrations/                  Tabellen, RLS, RPC-Funktionen (SQL-Migrationen)
+  migrations/                  SQL-Migrationen (Tabellen, RLS, RPC-Funktionen)
   .env.example                 Vorlage für lokale Function-Secrets
-  functions/create-poll/       Edge Function: Passwortprüfung + Anlegen
+  functions/create-calendar/   Edge Function: Passwortprüfung + Anlegen
 scripts/build.js               Baut dist/ für GitHub Pages
 .github/workflows/deploy.yml   Tests + automatisches Pages-Deployment
 ```
@@ -133,9 +138,8 @@ scripts/build.js               Baut dist/ für GitHub Pages
 
 ## Lokal testen
 
-Voraussetzung: [Node.js](https://nodejs.org) ≥ 18 (für einen lokalen
-Webserver und den Test-Runner). Kein `npm install` nötig – das Projekt
-hat keine Abhängigkeiten.
+Voraussetzung: [Node.js](https://nodejs.org) ≥ 18. Kein `npm install`
+nötig – das Projekt hat keine Abhängigkeiten.
 
 1. **Supabase-Projekt einrichten** (siehe unten) und Konfigurationsdatei
    anlegen:
@@ -144,53 +148,59 @@ hat keine Abhängigkeiten.
    cp js/config.example.js js/config.js
    ```
 
-   Trage in `js/config.js` deine echte Supabase-URL und den `anon`-Key
-   ein (Supabase-Dashboard → Project Settings → API). Diese Datei ist in
+   Trage in `js/config.js` deine Supabase-URL und den `anon`-Key ein
+   (Supabase-Dashboard → Project Settings → API). Diese Datei ist in
    `.gitignore` und wird nicht committet.
 
 2. **Statischen Server starten** (ES-Module funktionieren nicht über
-   `file://`, daher braucht es einen einfachen HTTP-Server):
+   `file://`):
 
    ```bash
    npx serve .
-   # oder z. B.: python3 -m http.server 8080
+   # oder: python3 -m http.server 8080
    ```
 
-3. Im Browser `http://localhost:3000` (bzw. den Port deines Servers)
-   öffnen, eine Umfrage erstellen und den erzeugten Link in einem
-   zweiten Tab / auf dem Handy öffnen, um das Abstimmen zu testen.
+3. Im Browser öffnen, einen Kalender anlegen und den erzeugten Link in
+   einem zweiten Tab bzw. auf dem Handy öffnen, um das Eintragen unter
+   verschiedenen Namen zu testen.
 
 ---
 
 ## Automatisierte Tests
 
-Die Kernlogik (Stimmen zählen, Rangfolge inkl. Gleichstand-Fälle,
-Validierung/Escaping) ist mit dem in Node eingebauten Test-Runner
-getestet – keine zusätzliche Test-Bibliothek nötig:
+Die Kernlogik (Kalenderraster inkl. Schaltjahren und Monatswechseln,
+Auszählung pro Tag, Rangfolge inkl. Gleichstand-Fällen, Ersetzen der
+eigenen Auswahl) ist mit dem in Node eingebauten Test-Runner getestet:
 
 ```bash
 npm test
 ```
 
-Der GitHub-Actions-Workflow führt diese Tests bei jedem Push und jeder
-Pull Request automatisch aus; das Deployment läuft nur, wenn sie
-erfolgreich sind.
+Weil Datumslogik gern an Zeitzonen scheitert, lohnt sich zusätzlich ein
+Durchlauf unter einer fremden Zeitzone:
+
+```bash
+TZ=Pacific/Auckland npm test
+TZ=America/Los_Angeles npm test
+```
+
+Der GitHub-Actions-Workflow führt die Tests bei jedem Push und jeder
+Pull Request aus; das Deployment läuft nur, wenn sie erfolgreich sind.
 
 ---
 
 ## Supabase einrichten
 
 1. **Projekt anlegen:** Auf [supabase.com](https://supabase.com)
-   kostenlos registrieren und ein neues Projekt erstellen (Region nahe
-   an deinem Freundeskreis wählen).
+   kostenlos registrieren und ein neues Projekt erstellen.
 
 2. **Datenbankschema anlegen** – zwei Wege, wähl einen:
 
    - **Option A (am schnellsten): manuell im SQL Editor.**
      Supabase-Dashboard → **SQL Editor** → **New query**, den kompletten
-     Inhalt von
-     [`supabase/migrations/20260820120000_initial_schema.sql`](supabase/migrations/20260820120000_initial_schema.sql)
-     einfügen und **Run** klicken.
+     Inhalt der Migrationsdateien aus
+     [`supabase/migrations/`](supabase/migrations) **in
+     Dateinamen-Reihenfolge** einfügen und jeweils **Run** klicken.
 
    - **Option B: über die Supabase CLI.**
 
@@ -199,200 +209,182 @@ erfolgreich sind.
      supabase db push
      ```
 
-     Praktisch für künftige Schemaänderungen: Neue Migrationsdatei mit
-     `supabase migration new <beschreibung>` in `supabase/migrations/`
-     anlegen, committen, dann erneut `supabase db push` ausführen.
+     Praktisch für künftige Schemaänderungen: neue Migrationsdatei mit
+     `supabase migration new <beschreibung>` anlegen, committen, dann
+     erneut `supabase db push`.
 
    > **Hinweis zur GitHub-Integration:** Verbindest du dein
-   > Supabase-Projekt zusätzlich über **Project Settings → Integrations
-   > → GitHub Connection** mit diesem Repository, richtet Supabase
-   > vor allem *Preview-Branches für Pull Requests* ein. Neue
-   > Migrationen werden dadurch **nicht automatisch** in die
-   > Produktionsdatenbank übernommen – das Dashboard zeigt unter
-   > **Database → Migrations** stattdessen weiterhin die
-   > CLI-Befehle aus Option B an, bis du sie einmal manuell ausführst.
-   > Verlass dich also auf Option A oder B, nicht auf die
-   > GitHub-Verbindung allein.
+   > Supabase-Projekt über **Project Settings → Integrations → GitHub
+   > Connection** mit diesem Repository, richtet Supabase vor allem
+   > *Preview-Branches für Pull Requests* ein. Neue Migrationen werden
+   > dadurch **nicht automatisch** in die Produktionsdatenbank
+   > übernommen – verlass dich also auf Option A oder B.
 
-   Beide Wege legen dieselben vier Tabellen, Row-Level-Security (ohne
-   Policies → dichter Tabellenzugriff) sowie die drei RPC-Funktionen
-   `get_poll_data`, `add_date_option` und `submit_response` an. Da das
-   SQL-Skript ausschließlich aus `CREATE TABLE`/`CREATE FUNCTION`/`GRANT`
-   besteht (kein `SELECT`), ist „Success. No rows returned“ im SQL
-   Editor die **erwartete** Erfolgsmeldung – kein Fehler. Prüfen lässt
-   sich der Erfolg im **Table Editor** (die vier Tabellen sollten
-   auftauchen) bzw. unter **Database → Functions** (die drei
-   RPC-Funktionen sollten auftauchen).
+   Das legt die Tabellen `calendars` und `availabilities`,
+   Row-Level-Security (ohne Policies → dichter Tabellenzugriff) sowie
+   die RPC-Funktionen `get_calendar_data` und `set_availability` an. Da
+   die Skripte ausschließlich aus `CREATE`/`GRANT`/`DROP` bestehen (kein
+   `SELECT`), ist **„Success. No rows returned“** im SQL Editor die
+   erwartete Erfolgsmeldung – kein Fehler. Prüfen lässt sich der Erfolg
+   im **Table Editor** (beide Tabellen sichtbar) bzw. unter **Database →
+   Functions** (beide RPC-Funktionen sichtbar).
 
 3. **API-Zugangsdaten notieren:** **Project Settings → API** →
-   `Project URL` und den `anon` `public` Key kopieren. Diese Werte sind
-   für den Einsatz im Browser vorgesehen (siehe
-   [Sicherheit](#sicherheit)).
+   `Project URL` und den `anon` `public` Key kopieren.
 
 4. **Edge Function für den Passwortschutz deployen.** Voraussetzung:
-   [Supabase CLI](https://supabase.com/docs/guides/cli) installiert
-   (`npm install -g supabase` oder per Paketmanager) und eingeloggt
-   (`supabase login`).
+   [Supabase CLI](https://supabase.com/docs/guides/cli) installiert und
+   eingeloggt (`supabase login`). Die Befehle müssen **im Wurzelordner
+   dieses Repositorys** laufen, damit die CLI `supabase/functions/`
+   findet.
 
    ```bash
-   # Projekt einmalig verknüpfen (Projekt-Ref aus der Supabase-URL,
-   # z. B. https://<projekt-ref>.supabase.co):
+   # Projekt einmalig verknüpfen (nur die Projekt-Ref, nicht die volle URL,
+   # z. B. aus https://<projekt-ref>.supabase.co):
    supabase link --project-ref <dein-projekt-ref>
 
    # Passwort-Hash berechnen (Beispiel mit Node):
    node -e "console.log(require('crypto').createHash('sha256').update('DEIN_PASSWORT').digest('hex'))"
 
    # Das Ergebnis als Secret in der Function-Umgebung hinterlegen:
-   supabase secrets set POLL_CREATE_PASSWORD_HASH=<der-berechnete-hash>
+   supabase secrets set CALENDAR_CREATE_PASSWORD_HASH=<der-berechnete-hash>
 
    # Function deployen:
-   supabase functions deploy create-poll
+   supabase functions deploy create-calendar
    ```
 
    `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` stehen Edge Functions
-   auf Supabase automatisch als Umgebungsvariablen zur Verfügung – dafür
-   ist nichts weiter zu tun. Der Service-Role-Key verlässt damit nie
-   deinen Rechner bzw. die Supabase-Umgebung.
+   automatisch zur Verfügung – dafür ist nichts weiter zu tun. Der
+   Service-Role-Key verlässt damit nie die Supabase-Umgebung.
 
    Zum lokalen Testen der Function:
 
    ```bash
    cp supabase/.env.example supabase/.env
-   # POLL_CREATE_PASSWORD_HASH in supabase/.env eintragen
-   supabase functions serve create-poll --env-file supabase/.env
+   # CALENDAR_CREATE_PASSWORD_HASH in supabase/.env eintragen
+   supabase functions serve create-calendar --env-file supabase/.env
    ```
 
-5. **Abuse-Schutz (optional, empfohlen):** Im Supabase-Dashboard unter
-   **Authentication → Rate Limits** bzw. **Settings → API** die
-   eingebauten Kontingente prüfen/anpassen. Ein eigenes Rate-Limiting
-   wie bei einem selbst betriebenen Server ist ohne eigenen Server nicht
-   sinnvoll umsetzbar – die App verlässt sich hier bewusst auf die
-   Bordmittel von Supabase.
+5. **Abuse-Schutz (optional, empfohlen):** Ein eigenes Rate-Limiting ist
+   ohne eigenen Server nicht sinnvoll umsetzbar – die App verlässt sich
+   bewusst auf die eingebauten Kontingente von Supabase
+   (**Settings → API**).
 
 ---
 
 ## GitHub Pages einrichten
 
 1. **Repository anlegen** (öffentlich – private GitHub-Pages-Seiten
-   erfordern GitHub Pro/Team) und diesen Code hochladen/pushen.
+   erfordern GitHub Pro/Team) und diesen Code pushen.
 
 2. **Repository-Variablen setzen:** **Settings → Secrets and variables
    → Actions → Variables** → **New repository variable**:
    - `SUPABASE_URL` = deine Supabase-Projekt-URL
    - `SUPABASE_ANON_KEY` = dein `anon`-Key
 
-   (Variablen statt Secrets, weil diese Werte laut Supabase ohnehin für
-   den Browser bestimmt sind – funktional wäre auch `Secrets` möglich,
-   der Workflow müsste dann entsprechend `secrets.` statt `vars.`
-   referenzieren.)
+3. **Pages aktivieren:** **Settings → Pages** → **Source** auf
+   **GitHub Actions** stellen (nicht „Deploy from a branch“).
 
-3. **Pages aktivieren:** **Settings → Pages** → unter **Build and
-   deployment** → **Source** auf **GitHub Actions** stellen. Der
-   mitgelieferte Workflow [`deploy.yml`](.github/workflows/deploy.yml)
-   übernimmt den Rest.
+4. **Deployment-Branch freigeben:** **Settings → Environments →
+   `github-pages`** → unter **Deployment branches and tags** sicherstellen,
+   dass `main` erlaubt ist. Fehlt das, bricht der Workflow mit
+   *„Branch 'main' is not allowed to deploy to github-pages due to
+   environment protection rules“* ab.
 
-4. **Auf `main` pushen** (oder den Workflow manuell über **Actions →
-   Tests & GitHub Pages Deployment → Run workflow** anstoßen). Nach ein
-   bis zwei Minuten ist die Seite unter
+5. **Auf `main` pushen.** Nach ein bis zwei Minuten ist die Seite unter
    `https://<username>.github.io/<repository>` erreichbar – öffentlich,
-   mit HTTPS, ganz ohne Tunnel, Port-Weiterleitung oder Reverse Proxy.
+   mit HTTPS, ohne Tunnel oder Port-Weiterleitung.
 
 ---
 
 ## Updates & Deployment
 
 Ganz normal weiterentwickeln und auf `main` pushen (bzw. per Pull
-Request mergen): Der Workflow führt automatisch die Tests aus und
-veröffentlicht bei Erfolg die neue Version über GitHub Pages. Kein
-manuelles Server-Management, kein Neustart, keine Wartung – GitHub
-übernimmt Build und Hosting, Supabase übernimmt die Datenhaltung.
+Request mergen): Der Workflow führt die Tests aus und veröffentlicht bei
+Erfolg automatisch die neue Version über GitHub Pages. Kein manuelles
+Server-Management, kein Neustart, keine Wartung.
+
+Ändert sich das **Datenbankschema**, gehört zusätzlich eine neue
+Migration nach `supabase/migrations/` und einmalig `supabase db push`
+(oder der SQL Editor) dazu – Supabase übernimmt Migrationen nicht
+automatisch beim Push. Ändert sich die **Edge Function**, ist einmalig
+`supabase functions deploy create-calendar` nötig.
 
 ---
 
 ## Bedienungsanleitung
 
-**Umfrage erstellen:**
+**Kalender anlegen:**
 1. Startseite öffnen, Titel eingeben (Pflicht), optional eine
    Beschreibung.
-2. Mindestens einen Terminvorschlag über den Kalender-Picker wählen,
-   bei Bedarf über „+ weiteren Termin“ weitere hinzufügen.
-3. Das gemeinsame Passwort eingeben und auf „Umfrage erstellen“ tippen.
-4. Der erzeugte Link erscheint direkt zum Kopieren – diesen Link an
-   Freunde weiterschicken (Chat, Mail, wie auch immer).
+2. Das gemeinsame Passwort eingeben und auf „Kalender anlegen“ tippen.
+3. Den erzeugten Link kopieren und an die Freunde schicken.
 
-**Abstimmen:**
-1. Link öffnen (funktioniert auf jedem Gerät, ohne Login).
-2. Namen eingeben.
-3. Alle Termine ankreuzen, an denen man Zeit hat.
-4. Optional: eigenen Terminvorschlag über den Kalender-Picker ergänzen –
-   erscheint sofort für alle sichtbar in der Liste.
-5. Auf „Abstimmen“ tippen. Öffnet man den Link später erneut und gibt
-   denselben Namen ein, wird die vorhandene Stimme automatisch
-   vorausgefüllt und beim erneuten Absenden aktualisiert statt
-   dupliziert.
+**Eintragen, wann du Zeit hast:**
+1. Link öffnen (jedes Gerät, ohne Login).
+2. Namen eintragen – warst du schon mal da, werden deine bisherigen Tage
+   automatisch geladen.
+3. Im Kalender die Tage antippen, an denen du Zeit hast. Nochmal
+   antippen entfernt dich wieder. Mit ‹ und › zwischen den Monaten
+   wechseln.
+4. Auf „Änderungen speichern“ tippen – danach sehen alle anderen deine
+   Tage ebenfalls.
 
-**Ergebnisse ansehen:**
-- Direkt unter dem Abstimm-Formular: alle Termine absteigend nach
-  Stimmenzahl, inklusive der Namen der jeweiligen Teilnehmer.
-- Die Top 3 (nach Punktegleichstand ggf. auch mehr als 3 Termine, falls
-  mehrere um Platz 3 gleichauf liegen) sind farblich und mit
-  „Platz 1/2/3“ hervorgehoben.
-- Ergebnisse sind nach jedem Neuladen der Seite aktuell (kein
-  automatisches Live-Update – das ist laut Aufgabenstellung optional
-  und wurde bewusst nicht umgesetzt).
+**Sehen, wer wann kann:**
+- Im Kalender sind Tage, an denen schon jemand Zeit hat, hell
+  hervorgehoben; die Zahl in der Ecke zeigt, wie viele Leute das sind.
+  Deine eigenen Tage sind kräftig eingefärbt. Wer genau an einem Tag
+  kann, steht im Tooltip der Zelle (Desktop) und in der Übersicht.
+- Unter „Wer kann wann?“ stehen alle Tage absteigend nach Anzahl der
+  Personen, jeweils mit Namen. Die drei bestbesuchten Tage sind als
+  Platz 1/2/3 hervorgehoben; bei Gleichstand um Platz 3 werden alle
+  gleichauf liegenden Tage angezeigt statt willkürlich einer davon
+  weggelassen.
+- Der Stand ist nach jedem Neuladen aktuell (kein Live-Update – das ist
+  bewusst nicht umgesetzt).
 
 ---
 
 ## Sicherheit
 
-- **Unrätbare IDs:** Alle Poll-IDs sind UUIDv4 (`gen_random_uuid()` in
-  Postgres) – keine fortlaufenden Nummern.
-- **Kein Durchblättern fremder Umfragen:** Row Level Security ohne
-  Policies sperrt jeden direkten Tabellenzugriff; der gesamte
-  Lese-/Schreibzugriff läuft über kontrollierte `SECURITY DEFINER`
-  RPC-Funktionen, die jeweils die (unrätbare) `poll_id` verlangen.
-- **Eingabevalidierung & XSS-Schutz:** Titel, Beschreibung und Namen
-  werden client- und serverseitig längenbegrenzt (siehe `js/utils.js`
-  und die `CHECK`-Constraints in
-  `supabase/migrations/20260820120000_initial_schema.sql`). Beim Rendern
-  wird ausschließlich über `textContent`/DOM-APIs gearbeitet statt über
-  `innerHTML`-Zusammenbau, wodurch eingegebener Text nie als HTML
-  interpretiert wird.
-- **Kein manuelles Zusammenbauen von Abfragen:** Der gesamte
-  Datenbankzugriff läuft über die offiziellen `supabase-js`-Methoden
+- **Unrätbare IDs:** Kalender-IDs sind UUIDv4 (`gen_random_uuid()`) –
+  keine fortlaufenden Nummern.
+- **Kein Durchblättern fremder Kalender:** Row Level Security ohne
+  Policies sperrt jeden direkten Tabellenzugriff; der gesamte Zugriff
+  läuft über `SECURITY DEFINER`-RPC-Funktionen, die die unrätbare
+  `calendar_id` verlangen.
+- **Eingabevalidierung:** Titel, Beschreibung und Namen werden client-
+  und serverseitig längenbegrenzt (siehe `js/utils.js`, die Edge
+  Function und die `CHECK`-Constraints in den Migrationen). Die Anzahl
+  der auf einmal gespeicherten Tage ist ebenfalls begrenzt.
+- **XSS-Schutz:** Die Oberfläche baut kein HTML aus Nutzereingaben
+  zusammen, sondern setzt alle dynamischen Texte über
+  `textContent`/DOM-APIs – eingegebener Text wird damit nie als HTML
+  interpretiert.
+- **Kein manuelles Zusammenbauen von Abfragen:** Der Datenbankzugriff
+  läuft ausschließlich über die offiziellen `supabase-js`-Methoden
   (`.rpc()`, `.functions.invoke()`).
-- **Passwortschutz fürs Erstellen:** serverseitig in der Edge Function
-  geprüft (SHA-256-Hash-Vergleich gegen ein Supabase-Secret), nicht im
-  Frontend.
+- **Passwortschutz fürs Anlegen:** serverseitig in der Edge Function
+  geprüft (SHA-256-Hash gegen ein Supabase-Secret), nicht im Frontend.
 - **Öffentliche Config-Werte sind kein Sicherheitsloch:** Supabase-URL
-  und `anon`-Key dürfen laut Supabase-Dokumentation im Frontend
-  sichtbar sein; die eigentliche Zugriffskontrolle übernimmt RLS bzw.
-  die Edge Function.
-- **Abuse-Schutz:** Es gibt keinen eigenen Server, der Rate-Limiting
-  umsetzen könnte – stattdessen werden die eingebauten Kontingente von
-  Supabase genutzt (siehe [Supabase einrichten](#supabase-einrichten),
-  Punkt 5).
+  und `anon`-Key dürfen laut Supabase-Doku im Frontend sichtbar sein;
+  die Zugriffskontrolle übernehmen RLS und die Edge Function.
 
 ---
 
 ## Eigene Domain (optional)
 
-Um die App unter einer eigenen Domain statt `github.io` zu erreichen:
-
-1. Bei deinem Domain-Anbieter einen `CNAME`-Eintrag (für eine
-   Subdomain, z. B. `termine.deine-domain.de`) auf
-   `<username>.github.io` anlegen.
+1. Beim Domain-Anbieter einen `CNAME`-Eintrag (z. B.
+   `termine.deine-domain.de`) auf `<username>.github.io` anlegen.
 2. Im Repository unter **Settings → Pages → Custom domain** die Domain
-   eintragen und speichern (das erzeugt automatisch eine `CNAME`-Datei
-   im veröffentlichten Ordner). HTTPS wird von GitHub automatisch per
-   Let's-Encrypt-Zertifikat bereitgestellt.
+   eintragen und speichern. HTTPS stellt GitHub automatisch per
+   Let's-Encrypt-Zertifikat bereit.
 
 ---
 
 ## Grenzen / bewusst nicht umgesetzt
 
-Wie in der Aufgabenstellung vorgegeben, wurden folgende Erweiterungen
-bewusst **nicht** umgesetzt (die Architektur verhindert sie aber nicht):
 E-Mail-/Push-Benachrichtigungen, ICS-Kalender-Export, Mehrsprachigkeit,
-echte Nutzerkonten, Live-Updates ohne Neuladen, nachträgliches
-Bearbeiten/Löschen einzelner Termine durch den Organisator.
+echte Nutzerkonten, Live-Updates ohne Neuladen sowie das nachträgliche
+Bearbeiten/Löschen fremder Einträge durch den Organisator. Die
+Architektur verhindert diese Erweiterungen nicht.
