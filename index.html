@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terminfinder – Neue Umfrage erstellen</title>
+  <meta name="description" content="Findet unkompliziert den passenden Termin für euer nächstes Treffen – ganz ohne Anmeldung.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <h1>📅 Terminfinder</h1>
+      <p class="tagline">Findet ganz unkompliziert den passenden Termin für euer nächstes Treffen – ohne Anmeldung.</p>
+    </header>
+
+    <main>
+      <section id="create-section" class="card">
+        <h2>Neue Umfrage erstellen</h2>
+        <form id="create-form" novalidate>
+          <label for="title">Titel *</label>
+          <input id="title" name="title" type="text" maxlength="200" required placeholder="z. B. Grillabend bei Anna" autocomplete="off">
+
+          <label for="description">Beschreibung (optional)</label>
+          <textarea id="description" name="description" maxlength="2000" rows="3" placeholder="Ein paar Infos zum Treffen ..."></textarea>
+
+          <fieldset id="date-options-fieldset">
+            <legend>Terminvorschläge *</legend>
+            <div id="date-options-list"></div>
+            <button type="button" id="add-date-option-btn" class="btn-secondary">+ weiteren Termin</button>
+          </fieldset>
+
+          <label for="password">Passwort fürs Erstellen *</label>
+          <input id="password" name="password" type="password" required autocomplete="off" placeholder="Frag im Freundeskreis nach, falls du es nicht kennst">
+          <p class="hint">Das Erstellen neuer Umfragen ist mit einem gemeinsamen Passwort geschützt – Abstimmen über einen bestehenden Link braucht kein Passwort.</p>
+
+          <button type="submit" id="submit-btn" class="btn-primary">Umfrage erstellen</button>
+          <p id="create-status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section id="success-section" class="card hidden">
+        <h2>🎉 Umfrage erstellt!</h2>
+        <p>Teile diesen Link mit deinen Freunden, damit sie abstimmen können:</p>
+        <div class="share-box">
+          <input id="share-link" type="text" readonly aria-label="Link zur Umfrage">
+          <button type="button" id="copy-link-btn" class="btn-secondary">Link kopieren</button>
+        </div>
+        <a id="open-poll-link" class="btn-primary link-btn" href="#">Zur Umfrage</a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Keine Anmeldung nötig – einfach Link teilen und abstimmen.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="js/create.js"></script>
+</body>
+</html>

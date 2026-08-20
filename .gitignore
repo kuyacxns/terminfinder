@@ -1,0 +1,21 @@
+# Lokale Supabase-Konfiguration mit echten (wenn auch öffentlichen) Werten –
+# wird für das Deployment automatisch aus js/config.example.js gebaut,
+# siehe scripts/build.js und README.md.
+js/config.js
+
+# Build-Ausgabe
+dist/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/
+
+# Lokale Umgebungsvariablen (z. B. für die Supabase-CLI)
+.env
+.env.local
+supabase/.env

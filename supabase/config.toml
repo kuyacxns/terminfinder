@@ -1,0 +1,19 @@
+# Supabase-Projektkonfiguration.
+#
+# Diese Datei macht das Verzeichnis `supabase/` als gültiges
+# Supabase-Projekt erkennbar – sowohl für die Supabase CLI (lokale
+# Function-Tests, `supabase migration new`, ...) als auch für die
+# GitHub-Integration (Supabase-Dashboard -> Project Settings ->
+# Integrations -> GitHub Connection), die neue Dateien in
+# supabase/migrations/ beim Mergen auf den verbundenen Branch
+# automatisch als Datenbank-Migration anwendet.
+#
+# Dieses Projekt nutzt bewusst KEINEN lokalen Supabase-Stack (kein
+# `supabase start` / Docker) – lokal wird direkt gegen dein gehostetes
+# Supabase-Projekt getestet, siehe README.md, Abschnitt "Lokal testen".
+# Die Konfiguration ist deshalb absichtlich minimal gehalten.
+
+project_id = "terminfinder"
+
+[db]
+major_version = 15
