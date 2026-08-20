@@ -1,0 +1,369 @@
+:root {
+  --color-bg: #f4f6f8;
+  --color-card: #ffffff;
+  --color-text: #1f2933;
+  --color-muted: #5b6b79;
+  --color-primary: #1d7a6f;
+  --color-primary-dark: #145f56;
+  --color-border: #dfe4e8;
+  --color-error: #b3261e;
+  --color-error-bg: #fdecea;
+  --color-gold: #b8860b;
+  --color-gold-bg: #fff6df;
+  --color-silver: #6b6f76;
+  --color-silver-bg: #f1f2f4;
+  --color-bronze: #9c5a2e;
+  --color-bronze-bg: #fbeee2;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.site-header {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
+}
+
+.site-header h1,
+.home-link {
+  font-size: 1.6rem;
+  margin: 0;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.tagline {
+  color: var(--color-muted);
+  margin-top: 0.4rem;
+}
+
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+form label {
+  display: block;
+  font-weight: 600;
+  margin: 1rem 0 0.35rem;
+}
+
+form label:first-of-type {
+  margin-top: 0;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="date"],
+textarea {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  font-size: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin: 0.4rem 0 0;
+}
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+fieldset legend {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 0.4rem;
+}
+
+.date-option-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.date-option-row input {
+  flex: 1;
+}
+
+.remove-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--color-muted);
+}
+
+.remove-btn:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.7rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  width: 100%;
+  margin-top: 1.25rem;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-secondary:hover {
+  background: #eaf4f2;
+}
+
+.link-btn {
+  margin-top: 1rem;
+}
+
+.status {
+  min-height: 1.2em;
+  margin: 0.6rem 0 0;
+  color: var(--color-muted);
+}
+
+.status-error {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+}
+
+.share-box {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.share-box input {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.site-footer {
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.site-footer a {
+  color: var(--color-primary-dark);
+}
+
+/* Abstimm-Optionen: große Tap-Ziele fürs Handy */
+.vote-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.vote-option-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.vote-option-row:hover {
+  background: #f8fafb;
+}
+
+.vote-checkbox {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  margin-top: 0.1rem;
+  accent-color: var(--color-primary);
+}
+
+.vote-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.vote-option-date {
+  font-weight: 600;
+}
+
+.vote-option-voters {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.add-date-row {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--color-border);
+}
+
+.add-date-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-date-controls input {
+  flex: 1;
+}
+
+/* Ergebnisliste */
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.result-rank {
+  min-width: 3.2rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.result-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.result-date {
+  font-weight: 600;
+}
+
+.result-count {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.result-voters {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.result-top {
+  border-width: 2px;
+}
+
+.result-rank-1 {
+  border-color: var(--color-gold);
+  background: var(--color-gold-bg);
+}
+.result-rank-1 .result-rank {
+  color: var(--color-gold);
+}
+
+.result-rank-2 {
+  border-color: var(--color-silver);
+  background: var(--color-silver-bg);
+}
+.result-rank-2 .result-rank {
+  color: var(--color-silver);
+}
+
+.result-rank-3 {
+  border-color: var(--color-bronze);
+  background: var(--color-bronze-bg);
+}
+.result-rank-3 .result-rank {
+  color: var(--color-bronze);
+}
+
+@media (min-width: 600px) {
+  .page {
+    padding-top: 2rem;
+  }
+
+  .card {
+    padding: 1.75rem;
+  }
+}

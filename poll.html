@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terminfinder – Umfrage</title>
+  <meta name="description" content="Stimme ab, an welchen Terminen du Zeit hast.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a href="index.html" class="home-link">📅 Terminfinder</a>
+    </header>
+
+    <main>
+      <p id="loading" class="status">Umfrage wird geladen ...</p>
+      <p id="error-box" class="status status-error hidden" role="alert"></p>
+
+      <div id="poll-content" class="hidden">
+        <section class="card">
+          <h2 id="poll-title"></h2>
+          <p id="poll-description" class="hidden"></p>
+          <div class="share-box">
+            <input id="share-link" type="text" readonly aria-label="Link zur Umfrage">
+            <button type="button" id="copy-link-btn" class="btn-secondary">Link kopieren</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Wann hast du Zeit?</h3>
+          <form id="vote-form" novalidate>
+            <label for="participant-name">Dein Name *</label>
+            <input id="participant-name" type="text" maxlength="100" required placeholder="z. B. Anna" autocomplete="name">
+
+            <div id="vote-options-list" class="vote-options-list"></div>
+
+            <div class="add-date-row">
+              <label for="new-date-input">Eigenen Termin vorschlagen</label>
+              <div class="add-date-controls">
+                <input id="new-date-input" type="date">
+                <button type="button" id="add-date-btn" class="btn-secondary">Hinzufügen</button>
+              </div>
+              <p id="add-date-status" class="status" role="status" aria-live="polite"></p>
+            </div>
+
+            <button type="submit" id="submit-vote-btn" class="btn-primary">Abstimmen</button>
+            <p id="vote-status" class="status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <h3>Ergebnisse</h3>
+          <p id="results-empty" class="status hidden">Noch keine Stimmen abgegeben – sei die/der Erste!</p>
+          <ul id="results-list" class="results-list"></ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p><a href="index.html">Eigene neue Umfrage erstellen</a></p>
+    </footer>
+  </div>
+
+  <script type="module" src="js/poll.js"></script>
+</body>
+</html>
