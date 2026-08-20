@@ -3,67 +3,142 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Terminfinder – Neuen Kalender anlegen</title>
-  <meta name="description" content="Gemeinsamer Kalender für den Freundeskreis: Jeder trägt ein, wann er Zeit hat.">
+  <meta name="theme-color" content="#7c3aed">
+  <title>Terminfinder</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div class="page">
-    <header class="site-header">
-      <h1>📅 Terminfinder</h1>
-      <p class="tagline">
-        Ein gemeinsamer Kalender für euch: Jede/r trägt ein, wann Zeit ist –
-        und alle sehen sofort, an welchen Tagen die meisten können.
-      </p>
+
+  <!-- Sichtbar, bis die App startet. Falls das Supabase-SDK nicht geladen
+       werden kann (CDN blockiert, kein Netz), bleibt so wenigstens eine
+       verständliche Meldung stehen statt einer leeren Seite. -->
+  <section id="boot" class="boot">
+    <div class="boot-logo">📅</div>
+    <p id="boot-text">Wird geladen …</p>
+  </section>
+
+  <!-- ------------------------------------------------ Anmeldung / Account -->
+  <section id="auth-view" class="auth-view hidden">
+    <div class="auth-card">
+      <div class="auth-logo">📅</div>
+      <h1>Terminfinder</h1>
+
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab is-active" data-mode="login" role="tab" aria-selected="true">Anmelden</button>
+        <button type="button" class="auth-tab" data-mode="register" role="tab" aria-selected="false">Account anlegen</button>
+      </div>
+
+      <form id="auth-form" novalidate>
+        <label for="auth-name">Name</label>
+        <input id="auth-name" type="text" maxlength="40" required autocomplete="username" placeholder="z. B. Krümelmonster">
+
+        <label for="auth-password">Passwort</label>
+        <input id="auth-password" type="password" required autocomplete="current-password" placeholder="mindestens 8 Zeichen">
+
+        <button type="submit" id="auth-submit" class="btn-primary">Anmelden</button>
+        <p id="auth-status" class="status" role="status" aria-live="polite"></p>
+        <p id="auth-hint" class="hint"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- Kalender -->
+  <div id="app-view" class="app-view hidden">
+
+    <header class="topbar">
+      <button type="button" id="profile-btn" class="me" aria-label="Profilbild ändern">
+        <span id="me-avatar"></span>
+        <span id="me-name" class="me-name"></span>
+      </button>
+      <button type="button" id="logout-btn" class="btn-ghost">Abmelden</button>
     </header>
 
-    <main>
-      <section id="create-section" class="card">
-        <h2>Neuen Kalender anlegen</h2>
-        <form id="create-form" novalidate>
-          <label for="title">Titel *</label>
-          <input id="title" name="title" type="text" maxlength="200" required placeholder="z. B. Grillabend bei Anna" autocomplete="off">
+    <section id="profile-panel" class="card profile-panel hidden">
+      <h3>Dein Profilbild</h3>
+      <div id="emoji-choices" class="choice-grid"></div>
+      <div id="color-choices" class="choice-grid color-grid"></div>
+      <p id="profile-status" class="status" role="status" aria-live="polite"></p>
+    </section>
 
-          <label for="description">Beschreibung (optional)</label>
-          <textarea id="description" name="description" maxlength="2000" rows="3" placeholder="Ein paar Infos zum Treffen ..."></textarea>
+    <main class="app-main">
 
-          <label for="password">Passwort fürs Anlegen *</label>
-          <input id="password" name="password" type="password" required autocomplete="off" placeholder="Frag im Freundeskreis nach, falls du es nicht kennst">
-          <p class="hint">
-            Nur das Anlegen neuer Kalender ist mit einem gemeinsamen Passwort geschützt.
-            Wer den Link hat, kann sich ohne Passwort eintragen.
-          </p>
+      <section class="card calendar-card">
+        <div class="month-nav">
+          <button type="button" id="prev-month" class="nav-btn" aria-label="Vorheriger Monat">‹</button>
+          <h2 id="month-label"></h2>
+          <button type="button" id="next-month" class="nav-btn" aria-label="Nächster Monat">›</button>
+        </div>
+        <button type="button" id="today-btn" class="btn-ghost today-btn">Heute</button>
 
-          <button type="submit" id="submit-btn" class="btn-primary">Kalender anlegen</button>
-          <p id="create-status" class="status" role="status" aria-live="polite"></p>
-        </form>
+        <div id="calendar-weekdays" class="calendar-weekdays"></div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+
+        <p class="legend">
+          <span class="legend-item"><span class="legend-dot mine"></span>Du hast Zeit</span>
+          <span class="legend-item"><span class="legend-dot others"></span>Andere haben Zeit</span>
+          <span class="legend-item">📝 Notiz</span>
+        </p>
       </section>
 
-      <section id="success-section" class="card hidden">
-        <h2>🎉 Kalender ist da!</h2>
-        <p>Teile diesen Link mit deinen Freunden – dann kann sich jede/r eintragen:</p>
-        <div class="share-box">
-          <input id="share-link" type="text" readonly aria-label="Link zum Kalender">
-          <button type="button" id="copy-link-btn" class="btn-secondary">Link kopieren</button>
+      <section id="day-panel" class="card day-panel is-empty">
+        <h3 id="day-title">Tippe einen Tag an</h3>
+
+        <label class="switch">
+          <input type="checkbox" id="available-toggle">
+          <span class="switch-label">Ich habe Zeit</span>
+        </label>
+
+        <div id="time-fields" class="time-fields hidden">
+          <label class="switch">
+            <input type="checkbox" id="all-day-toggle" checked>
+            <span class="switch-label">Ganzer Tag</span>
+          </label>
+
+          <div id="time-inputs" class="time-inputs hidden">
+            <div class="time-field">
+              <label for="start-time">Von</label>
+              <input type="time" id="start-time">
+            </div>
+            <div class="time-field">
+              <label for="end-time">Bis (optional)</label>
+              <input type="time" id="end-time">
+            </div>
+          </div>
         </div>
-        <a id="open-calendar-link" class="btn-primary link-btn" href="#">Zum Kalender</a>
+
+        <label for="note-input">Notiz (sehen alle)</label>
+        <textarea id="note-input" rows="2" maxlength="500" placeholder="z. B. erst ab 19 Uhr, oder: bin im Urlaub"></textarea>
+        <p id="note-counter" class="counter">0/500</p>
+
+        <button type="button" id="save-day-btn" class="btn-primary">Speichern</button>
+        <p id="day-status" class="status" role="status" aria-live="polite"></p>
+
+        <div id="day-people" class="day-people"></div>
       </section>
 
       <section class="card">
-        <h3>So funktioniert's</h3>
-        <ol class="how-to">
-          <li>Kalender anlegen und den Link in eure Gruppe schicken.</li>
-          <li>Jede/r öffnet den Link, tippt den Namen ein und markiert die Tage, an denen Zeit ist.</li>
-          <li>Alle sehen im Kalender, wer wann kann – und tragen sich bei passenden Tagen dazu.</li>
-        </ol>
+        <h3>🏆 Da haben die meisten Zeit</h3>
+        <p id="ranking-empty" class="muted hidden">Noch hat sich niemand eingetragen. Mach den Anfang!</p>
+        <ol id="ranking-list" class="ranking-list"></ol>
       </section>
-    </main>
 
-    <footer class="site-footer">
-      <p>Keine Anmeldung nötig – einfach Link teilen und eintragen.</p>
-    </footer>
+    </main>
   </div>
 
-  <script type="module" src="js/create.js"></script>
+  <!-- Klassisches Script (kein Modul): läuft auch dann, wenn das Modul
+       oben gar nicht erst geladen werden kann. -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        var boot = document.getElementById('boot');
+        if (!boot || boot.classList.contains('hidden')) return;
+        document.getElementById('boot-text').textContent =
+          'Die App konnte nicht geladen werden. Bitte prüfe deine Internetverbindung ' +
+          'und lade die Seite neu.';
+        boot.classList.add('boot-error');
+      }, 8000);
+    });
+  </script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
