@@ -54,8 +54,20 @@
     </header>
 
     <section id="profile-panel" class="card profile-panel hidden">
-      <h3>Dein Profilbild</h3>
-      <div id="emoji-choices" class="choice-grid"></div>
+      <h3>Dein Profil</h3>
+
+      <label for="name-input">Name</label>
+      <div class="name-row">
+        <input id="name-input" type="text" maxlength="40" autocomplete="off">
+        <button type="button" id="save-name-btn" class="btn-secondary">Ändern</button>
+      </div>
+      <p class="hint">Mit dem neuen Namen meldest du dich ab sofort auch an.</p>
+      <p id="name-status" class="status" role="status" aria-live="polite"></p>
+
+      <h4>Profilbild</h4>
+      <div id="emoji-choices" class="choice-grid choice-grid-scroll"></div>
+
+      <h4>Farbe</h4>
       <div id="color-choices" class="choice-grid color-grid"></div>
       <p id="profile-status" class="status" role="status" aria-live="polite"></p>
     </section>

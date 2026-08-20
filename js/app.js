@@ -5,7 +5,15 @@
 // nicht als HTML ausgeführt werden.
 
 import { supabase } from './supabaseClient.js';
-import { ensureProfile, getSession, login, logout, register, updateAvatar } from './auth.js';
+import {
+  ensureProfile,
+  getSession,
+  login,
+  logout,
+  register,
+  updateAvatar,
+  updateDisplayName,
+} from './auth.js';
 import { AVATAR_COLORS, AVATAR_EMOJIS } from './avatar.js';
 import {
   aggregateByDate,
@@ -50,6 +58,9 @@ const ui = {
   emojiChoices: el('emoji-choices'),
   colorChoices: el('color-choices'),
   profileStatus: el('profile-status'),
+  nameInput: el('name-input'),
+  saveNameBtn: el('save-name-btn'),
+  nameStatus: el('name-status'),
 
   monthLabel: el('month-label'),
   prevMonth: el('prev-month'),
@@ -190,6 +201,9 @@ function showAuth() {
   state.profile = null;
   state.entries = [];
   ui.appView.classList.add('hidden');
+  // Sonst bliebe das Profil-Panel offen und der nächste Klick darauf
+  // würde es zuklappen statt öffnen.
+  ui.profilePanel.classList.add('hidden');
   ui.authView.classList.remove('hidden');
   // Bewusst immer "Anmelden": Wer gerade abgemeldet hat oder frisch
   // herkommt, will sich in aller Regel anmelden – nicht neu registrieren.
@@ -214,8 +228,50 @@ function wireProfile() {
 
   ui.profileBtn.addEventListener('click', () => {
     ui.profilePanel.classList.toggle('hidden');
-    if (!ui.profilePanel.classList.contains('hidden')) renderProfileChoices();
+    if (!ui.profilePanel.classList.contains('hidden')) {
+      ui.nameInput.value = state.profile.display_name;
+      setStatus(ui.nameStatus, '');
+      renderProfileChoices();
+    }
   });
+
+  ui.saveNameBtn.addEventListener('click', saveName);
+  ui.nameInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      saveName();
+    }
+  });
+}
+
+async function saveName() {
+  const check = validateDisplayName(ui.nameInput.value);
+  if (!check.ok) {
+    setStatus(ui.nameStatus, check.error, true);
+    return;
+  }
+
+  const previous = state.profile.display_name;
+  if (check.value === previous) {
+    setStatus(ui.nameStatus, 'Das ist schon dein Name.');
+    return;
+  }
+
+  ui.saveNameBtn.disabled = true;
+  setStatus(ui.nameStatus, 'Wird geändert ...');
+  try {
+    state.profile = await updateDisplayName(state.profile.id, check.value, previous);
+    ui.nameInput.value = state.profile.display_name;
+    renderMe();
+    await loadEntries();
+    render();
+    setStatus(ui.nameStatus, 'Name geändert!');
+  } catch (err) {
+    ui.nameInput.value = state.profile.display_name;
+    setStatus(ui.nameStatus, err.message, true);
+  } finally {
+    ui.saveNameBtn.disabled = false;
+  }
 }
 
 function renderMe() {
