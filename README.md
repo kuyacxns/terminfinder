@@ -92,7 +92,7 @@ neu setzen:
 
 1. **Authentication → Users** öffnen.
 2. Die betroffene Person suchen. Sie steht dort unter ihrer technischen
-   Kennung, also z. B. `kruemelmonster-1a2b3c@example.com` – der Anfang
+   Kennung, also z. B. `kruemelmonster-1a2b3c@terminfinder.invalid` – der Anfang
    entspricht dem Namen in Kleinbuchstaben mit ausgeschriebenen Umlauten.
 3. Über das Menü am Zeilenende **Reset password** bzw. das Bearbeiten des
    Benutzers ein neues Passwort vergeben und der Person durchgeben.
@@ -119,11 +119,17 @@ unter `day_entries`.
 - **Name statt E-Mail.** Da ausdrücklich keine E-Mail-Adresse abgefragt
   werden soll, Supabase Auth aber eine braucht, erzeugt die App aus dem
   Namen deterministisch eine technische Adresse
-  (`krümelmonster` → `kruemelmonster-<hash>@example.com`, siehe
+  (`krümelmonster` → `kruemelmonster-<hash>@terminfinder.invalid`, siehe
   `nameToAuthEmail()` in [`js/utils.js`](js/utils.js)). An diese Adresse
   geht nie eine Mail. Der angehängte Hash sorgt dafür, dass „Anna Müller"
   und „Anna-Mueller" verschiedene Accounts bleiben und dass auch Namen
   ohne lateinische Buchstaben funktionieren.
+
+  Die Domain ist bewusst `.invalid`: Laut RFC 2606 ist sie dauerhaft nicht
+  auflösbar, es kann also selbst bei versehentlich aktiviertem Mailversand
+  nichts bei einer echten Person landen. `example.com` funktioniert hier
+  **nicht** – Supabase lehnt diese Adresse gezielt als Test-Domain ab
+  (`email_address_invalid`).
 
 - **Profilbilder ohne Datei-Upload.** Ein Emoji plus Farbe reicht als
   Erkennungszeichen, passt zum bunten Design und spart Storage-Bucket,
