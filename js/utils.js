@@ -14,10 +14,17 @@ export const MAX_NOTE_LENGTH = 500;
 
 /**
  * Technische Domain für die Anmeldung. Sie wird nie angeschrieben – siehe
- * nameToAuthEmail(). `example.com` ist laut RFC 2606 für genau solche
- * Zwecke reserviert und wird von jeder E-Mail-Prüfung akzeptiert.
+ * nameToAuthEmail().
+ *
+ * `.invalid` ist laut RFC 2606 dauerhaft nicht auflösbar. Damit kann selbst
+ * dann keine Mail bei einer echten Person landen, wenn in Supabase
+ * versehentlich wieder ein Mailversand aktiviert wird – anders als bei
+ * einer Domain, die jemandem gehören könnte.
+ *
+ * Nicht `example.com` verwenden: Supabase lehnt diese Adresse gezielt als
+ * Test-Domain ab (`email_address_invalid`).
  */
-const AUTH_EMAIL_DOMAIN = 'example.com';
+const AUTH_EMAIL_DOMAIN = 'terminfinder.invalid';
 
 /**
  * Einfacher, stabiler String-Hash (FNV-1a-Variante). Muss nicht

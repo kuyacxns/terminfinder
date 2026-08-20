@@ -64,7 +64,7 @@ test('nameToAuthEmail unterscheidet Namen mit gleicher Kurzform', () => {
 test('nameToAuthEmail liefert auch ohne lateinische Zeichen eine gültige Adresse', () => {
   const email = nameToAuthEmail('Анна');
 
-  assert.match(email, /^[a-z0-9][a-z0-9-]*@example\.com$/);
+  assert.match(email, /^[a-z0-9][a-z0-9-]*@terminfinder\.invalid$/);
   assert.notEqual(nameToAuthEmail('Анна'), nameToAuthEmail('😀'));
 });
 
