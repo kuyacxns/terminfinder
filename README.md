@@ -89,14 +89,11 @@ wichtigsten Entscheidungen sind hier dokumentiert:
 
 - **Schema als Supabase-Migration statt Einmal-Skript.** Das Datenbank-
   schema liegt unter `supabase/migrations/` im von der Supabase CLI
-  erwarteten Format (`<Zeitstempel>_beschreibung.sql`). Verbindest du dein
-  Supabase-Projekt über die GitHub-Integration mit diesem Repository
-  (Supabase-Dashboard → Project Settings → Integrations → GitHub
-  Connection, Production-Branch `main`), wendet Supabase neue
-  Migrationen automatisch an, sobald sie auf `main` gemerged werden –
-  ganz ohne manuellen Copy-Paste-Schritt im SQL-Editor. Ohne diese
-  Integration funktioniert der ursprüngliche manuelle Weg (Inhalt der
-  Migrationsdatei im SQL-Editor ausführen) weiterhin unverändert.
+  erwarteten Format (`<Zeitstempel>_beschreibung.sql`). Das ist die
+  Grundlage für sauberes Schema-Versioning, auch wenn Supabase eine neu
+  verbundene Migration nicht von selbst anwendet (siehe unten) – neue
+  Schemaänderungen bleiben so trotzdem nachvollziehbar im Repository
+  dokumentiert, statt als Wegwerf-SQL verloren zu gehen.
 
 - **ES-Module + Supabase-JS per CDN (`esm.sh`).** Kein `npm install`,
   kein Bundler, direkt im Browser lauffähig. `js/pollLogic.js` und
@@ -189,20 +186,33 @@ erfolgreich sind.
 
 2. **Datenbankschema anlegen** – zwei Wege, wähl einen:
 
-   - **Option A (empfohlen): GitHub-Integration.** Im Supabase-Dashboard
-     zu **Project Settings → Integrations → GitHub Connection** und das
-     Repository `<username>/terminfinder` verbinden, als
-     Production-Branch `main` auswählen. Sobald Migrationen unter
-     `supabase/migrations/` auf `main` gemerged werden, wendet Supabase
-     sie automatisch an – kein Copy-Paste in den SQL-Editor nötig.
-     Nach dem Verbinden (oder nach jedem neuen Merge) im Dashboard unter
-     **Database → Migrations** kurz prüfen, dass die Migration
-     `20260820120000_initial_schema.sql` als *applied* angezeigt wird.
-
-   - **Option B: manuell.** Im Supabase-Dashboard zu **SQL Editor** →
-     **New query**, den kompletten Inhalt von
+   - **Option A (am schnellsten): manuell im SQL Editor.**
+     Supabase-Dashboard → **SQL Editor** → **New query**, den kompletten
+     Inhalt von
      [`supabase/migrations/20260820120000_initial_schema.sql`](supabase/migrations/20260820120000_initial_schema.sql)
      einfügen und **Run** klicken.
+
+   - **Option B: über die Supabase CLI.**
+
+     ```bash
+     supabase link --project-ref <dein-projekt-ref>
+     supabase db push
+     ```
+
+     Praktisch für künftige Schemaänderungen: Neue Migrationsdatei mit
+     `supabase migration new <beschreibung>` in `supabase/migrations/`
+     anlegen, committen, dann erneut `supabase db push` ausführen.
+
+   > **Hinweis zur GitHub-Integration:** Verbindest du dein
+   > Supabase-Projekt zusätzlich über **Project Settings → Integrations
+   > → GitHub Connection** mit diesem Repository, richtet Supabase
+   > vor allem *Preview-Branches für Pull Requests* ein. Neue
+   > Migrationen werden dadurch **nicht automatisch** in die
+   > Produktionsdatenbank übernommen – das Dashboard zeigt unter
+   > **Database → Migrations** stattdessen weiterhin die
+   > CLI-Befehle aus Option B an, bis du sie einmal manuell ausführst.
+   > Verlass dich also auf Option A oder B, nicht auf die
+   > GitHub-Verbindung allein.
 
    Beide Wege legen dieselben vier Tabellen, Row-Level-Security (ohne
    Policies → dichter Tabellenzugriff) sowie die drei RPC-Funktionen
@@ -213,12 +223,6 @@ erfolgreich sind.
    sich der Erfolg im **Table Editor** (die vier Tabellen sollten
    auftauchen) bzw. unter **Database → Functions** (die drei
    RPC-Funktionen sollten auftauchen).
-
-   Künftige Schemaänderungen legst du als neue Datei in
-   `supabase/migrations/` ab (z. B. mit
-   `supabase migration new <beschreibung>`, falls die CLI installiert
-   ist) – so bleiben Datenbank und Repository-Historie über die
-   GitHub-Integration automatisch in Sync.
 
 3. **API-Zugangsdaten notieren:** **Project Settings → API** →
    `Project URL` und den `anon` `public` Key kopieren. Diese Werte sind

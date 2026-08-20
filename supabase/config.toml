@@ -1,12 +1,14 @@
 # Supabase-Projektkonfiguration.
 #
 # Diese Datei macht das Verzeichnis `supabase/` als gültiges
-# Supabase-Projekt erkennbar – sowohl für die Supabase CLI (lokale
-# Function-Tests, `supabase migration new`, ...) als auch für die
-# GitHub-Integration (Supabase-Dashboard -> Project Settings ->
-# Integrations -> GitHub Connection), die neue Dateien in
-# supabase/migrations/ beim Mergen auf den verbundenen Branch
-# automatisch als Datenbank-Migration anwendet.
+# Supabase-Projekt erkennbar – für die Supabase CLI (`supabase link`,
+# `supabase db push`, `supabase migration new`, lokale Function-Tests,
+# ...) sowie für die optionale GitHub-Integration (Supabase-Dashboard ->
+# Project Settings -> Integrations -> GitHub Connection), die vor allem
+# Preview-Branches für Pull Requests einrichtet. Migrationen in
+# supabase/migrations/ werden dadurch NICHT automatisch in die
+# Produktionsdatenbank übernommen – dafür weiterhin `supabase db push`
+# (oder das manuelle Ausführen im SQL Editor) nutzen, siehe README.md.
 #
 # Dieses Projekt nutzt bewusst KEINEN lokalen Supabase-Stack (kein
 # `supabase start` / Docker) – lokal wird direkt gegen dein gehostetes
