@@ -36,8 +36,8 @@ Supabase-Projekt (Postgres).
 - **Profilbild automatisch** – jeder Account bekommt beim Anlegen ein
   buntes Emoji-Bild, das sich aus dem Namen ableitet. Emoji und Farbe
   lassen sich jederzeit ändern.
-- **Ein Tipp = eingetragen** – im Monatskalender einen Tag antippen, fertig.
-  Nochmal antippen trägt wieder aus.
+- **Tag antippen, dann eintragen** – ein Tipp auf den Tag öffnet ihn
+  darunter; sichtbar wird der Eintrag für alle erst mit *Speichern*.
 - **Uhrzeit oder ganzer Tag** – wer nur abends kann, trägt „ab 19:00" oder
   „18:00 – 22:00" ein.
 - **Notizen pro Tag** – unabhängig davon, ob man Zeit hat. Auch „bin im
@@ -57,17 +57,18 @@ Supabase-Projekt (Postgres).
 1. **Account anlegen:** Seite öffnen → Tab *Account anlegen* → Name und
    Passwort (mindestens 8 Zeichen) eingeben. Das Profilbild kommt
    automatisch.
-2. **Eintragen:** Im Kalender den gewünschten Tag antippen – er wird sofort
-   als „du hast Zeit" markiert.
-3. **Verfeinern:** Direkt unter dem Kalender öffnet sich der Tag. Dort
-   lassen sich *Ganzer Tag* abwählen und eine Uhrzeit setzen sowie eine
-   Notiz schreiben. Danach auf **Speichern** tippen.
+2. **Eintragen:** Im Kalender den gewünschten Tag antippen – er öffnet sich
+   darunter. Dort *Ich habe Zeit* setzen und auf **Speichern** tippen.
+   Erst dann ist der Eintrag für alle sichtbar und im Kalender markiert.
+3. **Verfeinern:** Im selben Bereich lassen sich *Ganzer Tag* abwählen und
+   eine Uhrzeit setzen sowie eine Notiz schreiben – ebenfalls mit
+   **Speichern** bestätigen.
 4. **Umentscheiden:** Im selben Bereich steht unter *Speichern* der Knopf
    **Austragen** – ein Tipp, und dein Eintrag für den Tag ist weg. Er
    erscheint nur, wenn für den Tag auch wirklich etwas gespeichert ist,
    und heißt *Eintrag & Notiz löschen*, falls eine Notiz mit verloren
-   ginge. Eine Rückfrage gibt es bewusst nicht – ein Tipp auf den Tag
-   trägt dich jederzeit wieder ein.
+   ginge. Eine Rückfrage gibt es bewusst nicht – eintragen kannst du dich
+   jederzeit wieder.
 5. **Schauen, was die anderen machen:** Im selben Bereich stehen alle, die
    an dem Tag Zeit haben (mit ihren Uhrzeiten), und darunter alle Notizen.
 6. **Besten Tag finden:** Ganz unten steht die Rangliste. Ein Tipp auf eine
@@ -152,10 +153,14 @@ unter `day_entries`.
   (Person, Tag) beziehen. Eine Notiz ohne Verfügbarkeit ist ausdrücklich
   erlaubt.
 
-- **Tippen speichert nicht sofort.** Ein Tipp auf einen Tag ändert die
-  Auswahl erst nur lokal; gespeichert wird per Knopf. Bei wackligem
-  Mobilfunknetz ist das robuster als ein Schreibvorgang pro Tipp – man
-  sieht, ob es geklappt hat.
+- **Antippen wählt nur aus, es trägt nicht ein.** Ein Tipp auf einen Tag
+  öffnet ihn lediglich im Bereich darunter. Kalender und Rangliste zeigen
+  ausschließlich Gespeichertes – was dort steht, sehen also auch die
+  anderen. Eine frühere Fassung markierte den Tag schon beim Antippen;
+  das sah aus wie „eingetragen", war aber noch nichts wert, solange man
+  nicht auf Speichern getippt hatte. Bei wackligem Mobilfunknetz ist der
+  bewusste Speicherschritt ohnehin robuster als ein Schreibvorgang pro
+  Tipp – man sieht, ob es geklappt hat.
 
 - **Datumslogik in UTC.** Alle Kalenderberechnungen laufen in UTC, damit
   Sommerzeit-Umstellungen keine Tage verschieben. Nur „heute" wird aus der
